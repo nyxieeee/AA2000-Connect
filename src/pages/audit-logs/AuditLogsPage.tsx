@@ -26,8 +26,8 @@ export default function AuditLogsPage() {
     <AnimatedPage className="space-y-6 pb-12">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-navy-900 tracking-tight">Audit Logs</h1>
-          <p className="text-xs text-slate-500 mt-0.5">System-wide change tracking for DPA compliance</p>
+          <h1 className="text-2xl font-bold text-navy-900 tracking-tight">Activity History</h1>
+          <p className="text-xs text-slate-500 mt-0.5">Track all changes made across the system</p>
         </div>
         <button className="px-3 py-2 text-xs font-semibold text-slate-600 border border-surface-border rounded-xl hover:bg-slate-50 transition-all flex items-center gap-1.5">
           <Download size={14} /> Export

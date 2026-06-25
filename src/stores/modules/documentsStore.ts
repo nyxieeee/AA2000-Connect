@@ -15,6 +15,7 @@ interface DocumentsStore {
   documents: DocumentItem[];
   fetchDocuments: (serviceRecordId?: string) => void;
   addDocument: (doc: Omit<DocumentItem, 'id' | 'uploadedAt'>) => void;
+  updateDocument: (id: string, updates: Partial<Pick<DocumentItem, 'fileName' | 'fileSize'>>) => void;
   deleteDocument: (id: string) => void;
 }
 
@@ -24,6 +25,10 @@ export const useDocumentsStore = create<DocumentsStore>((set, get) => ({
   addDocument: (data) => {
     const newDoc: DocumentItem = { ...data, id: `doc-${Date.now()}`, uploadedAt: new Date().toISOString() };
     const updated = [...get().documents, newDoc];
+    storage.set('module_documents', updated); set({ documents: updated });
+  },
+  updateDocument: (id, updates) => {
+    const updated = get().documents.map(d => d.id === id ? { ...d, ...updates } : d);
     storage.set('module_documents', updated); set({ documents: updated });
   },
   deleteDocument: (id) => {

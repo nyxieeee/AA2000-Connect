@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { AnimatedPage } from '../../components/ui/AnimatedPage';
+import { storage } from '../../services/storage';
 
 interface ScheduledPost {
   id: string;
@@ -41,7 +42,7 @@ interface ScheduledPost {
 
 const SocialPlannerPage = () => {
   const [activeTab, setActiveTab] = useState('Calendar');
-  const [posts, setPosts] = useState<ScheduledPost[]>([
+  const [posts, setPosts] = useState<ScheduledPost[]>(() => storage.get('mktg_posts') || [
     { 
       id: '1', 
       day: 10, 
@@ -103,7 +104,9 @@ const SocialPlannerPage = () => {
       analytics: { reach: 0, engagement: 0, clicks: 0 }
     };
 
-    setPosts([...posts, postToAdd]);
+    const updated = [...posts, postToAdd];
+    setPosts(updated);
+    storage.set('mktg_posts', updated);
     setIsAddModalOpen(false);
     setNewPost({ day: new Date().getDate(), title: '', platform: 'Facebook' });
     setSelectedMedia(null);
@@ -134,8 +137,8 @@ const SocialPlannerPage = () => {
     <AnimatedPage className="space-y-6 pb-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-navy-900 tracking-tight mb-1 uppercase">Social Strategy Hub</h1>
-          <p className="sub-title mb-0 opacity-60">Multi-Channel Marketing & Performance</p>
+          <h1 className="text-2xl font-semibold text-navy-900 tracking-tight mb-1 uppercase">Social Calendar</h1>
+          <p className="sub-title mb-0 opacity-60">Schedule and track social media posts</p>
         </div>
         <div className="flex bg-slate-100 p-1 rounded-xl shadow-inner border border-surface-border">
           {['Calendar', 'Analytics', 'Automations'].map(tab => (

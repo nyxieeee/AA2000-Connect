@@ -4,7 +4,7 @@ import { useDocumentsStore } from '../../stores/modules/documentsStore';
 import { AnimatedPage, AnimatedList, AnimatedListItem } from '../../components/ui/AnimatedPage';
 
 export default function DocumentsPage() {
-  const { documents, addDocument, deleteDocument } = useDocumentsStore();
+  const { documents, addDocument, updateDocument, deleteDocument } = useDocumentsStore();
   const [search, setSearch] = useState('');
 
   const filtered = documents.filter(d => d.fileName.toLowerCase().includes(search.toLowerCase()));
@@ -68,7 +68,7 @@ export default function DocumentsPage() {
                 </div>
               </div>
               <div className="flex items-center gap-1 mt-3 pt-3 border-t border-surface-border opacity-0 group-hover:opacity-100 transition-all">
-                <button className="p-1.5 text-slate-400 hover:text-brand-blue hover:bg-slate-50 rounded-lg transition-all"><Download size={14} /></button>
+                <button onClick={() => { const name = window.prompt('Rename file:', doc.fileName); if (name && name.trim()) updateDocument(doc.id, { fileName: name.trim() }); }} className="p-1.5 text-slate-400 hover:text-brand-blue hover:bg-slate-50 rounded-lg transition-all"><Download size={14} /></button>
                 <button className="p-1.5 text-slate-400 hover:text-brand-blue hover:bg-slate-50 rounded-lg transition-all"><ExternalLink size={14} /></button>
                 <button onClick={() => deleteDocument(doc.id)} className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all ml-auto"><Trash2 size={14} /></button>
               </div>

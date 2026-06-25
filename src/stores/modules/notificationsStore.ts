@@ -18,6 +18,7 @@ interface NotificationsStore {
   addNotification: (notif: Omit<NotificationItem, 'id' | 'createdAt'>) => void;
   markRead: (id: string) => void;
   markAllRead: () => void;
+  deleteNotification: (id: string) => void;
   unreadCount: () => number;
 }
 
@@ -36,6 +37,10 @@ export const useNotificationsStore = create<NotificationsStore>((set, get) => ({
   },
   markAllRead: () => {
     const updated = get().notifications.map(n => ({ ...n, read: true }));
+    storage.set('module_notifications', updated); set({ notifications: updated });
+  },
+  deleteNotification: (id) => {
+    const updated = get().notifications.filter(n => n.id !== id);
     storage.set('module_notifications', updated); set({ notifications: updated });
   },
   unreadCount: () => get().notifications.filter(n => !n.read).length,

@@ -5,7 +5,7 @@ import { useSLAStore } from '../../stores/modules/slaStore';
 import { AnimatedPage, AnimatedList, AnimatedListItem } from '../../components/ui/AnimatedPage';
 
 export default function SLAPage() {
-  const { policies, entries, addPolicy, updatePolicy, deletePolicy, addEntry, resolveEntry } = useSLAStore();
+  const { policies, entries, addPolicy, updatePolicy, deletePolicy, addEntry, resolveEntry, deleteEntry } = useSLAStore();
   const [showForm, setShowForm] = useState(false);
   const [search, setSearch] = useState('');
   const [form, setForm] = useState({ name: '', scope: 'lead' as const, responseMinutes: 30, escalationUserId: '', alertMessage: 'SLA breach: {{scope}} response time exceeded' });
@@ -27,7 +27,7 @@ export default function SLAPage() {
       <div className="space-y-6 pb-12">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-navy-900 tracking-tight">SLA Tracking & Alerts</h1>
+          <h1 className="text-2xl font-bold text-navy-900 tracking-tight">Response Times</h1>
           <p className="text-xs text-slate-500 mt-0.5">Set expected response times and get alerted when deadlines are missed</p>
         </div>
         <button onClick={() => setShowForm(true)} className="px-4 py-2 bg-brand-blue text-white rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-brand-light transition-all shadow-sm">
@@ -143,6 +143,7 @@ export default function SLAPage() {
                     {isBreached ? 'BREACHED' : 'Within SLA'}
                   </span>
                   <button onClick={() => resolveEntry(e.id)} className="px-2 py-1 text-[10px] font-semibold text-emerald-600 bg-emerald-50 rounded-lg">Resolve</button>
+                  <button onClick={() => deleteEntry(e.id)} className="p-1 text-slate-400 hover:text-rose-500"><Trash2 size={12} /></button>
                 </div>
               </div>
             );

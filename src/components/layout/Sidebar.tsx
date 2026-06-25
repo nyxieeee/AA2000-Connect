@@ -41,8 +41,8 @@ const navGroups = [
     items: [
       { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
       { icon: Users, label: 'Contacts', path: '/contacts' },
-      { icon: Building2, label: 'Companies', path: '/companies' },
-      { icon: ClipboardList, label: 'Requests', path: '/requests' },
+      { icon: Building2, label: 'Accounts', path: '/companies' },
+      { icon: ClipboardList, label: 'PMS & CMS', path: '/requests' },
       { icon: FolderKanban, label: 'Projects', path: '/projects' },
       { icon: Target, label: 'Pipeline', path: '/pipeline' },
       { icon: MessageSquare, label: 'Inbox', path: '/inbox' },
@@ -67,9 +67,9 @@ const navGroups = [
   {
     label: 'Engagement',
     items: [
-      { icon: Eye, label: 'Buying Signals', path: '/buying-signals' },
+      { icon: Eye, label: 'Client Activity', path: '/buying-signals' },
       { icon: Share2, label: 'Org Chart', path: '/org-chart' },
-      { icon: Play, label: 'Sequences', path: '/sequences' },
+      { icon: Play, label: 'Follow-ups', path: '/sequences' },
       { icon: Lightbulb, label: 'AI Recommendations', path: '/ai-recommendations' },
     ],
   },
@@ -88,11 +88,11 @@ const navGroups = [
     label: 'Admin',
     items: [
       { icon: Shield, label: 'Admin Panel', path: '/admin' },
-      { icon: BarChart3, label: 'Sales Perf.', path: '/analytics' },
+      { icon: BarChart3, label: 'Sales Reports', path: '/analytics' },
       { icon: BarChart4, label: 'Admin Reports', path: '/admin-analytics' },
       { icon: FileSignature, label: 'Contracts', path: '/contracts' },
-      { icon: Clock, label: 'SLA Tracking', path: '/sla' },
-      { icon: ClipboardList, label: 'Audit Logs', path: '/audit-logs' },
+      { icon: Clock, label: 'Response Times', path: '/sla' },
+      { icon: ClipboardList, label: 'Activity History', path: '/audit-logs' },
     ],
   },
 ];

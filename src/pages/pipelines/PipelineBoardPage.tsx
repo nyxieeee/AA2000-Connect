@@ -330,7 +330,7 @@ const PipelineBoardPage = () => {
                 </div>
               </div>
             </div>
-            <p className="text-sm text-slate-500">Managing Philippine enterprise opportunities.</p>
+            <p className="text-sm text-slate-500">Track sales opportunities from inquiry to close.</p>
           </div>
         </div>
         

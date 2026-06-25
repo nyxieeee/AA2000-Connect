@@ -15,14 +15,19 @@ import {
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { AnimatedPage } from '../../components/ui/AnimatedPage';
+import { storage } from '../../services/storage';
 
 type AgentCategory = 'Conversational' | 'Marketing' | 'Sales' | 'Vision';
 
 const AIAgentsPage = () => {
-  const [activeCategory, setActiveCategory] = useState<AgentCategory>('Conversational');
+  const [activeCategory, setActiveCategory] = useState<AgentCategory>(() => storage.get('ai_active_category') || 'Conversational');
   const [isTraining, setIsTraining] = useState(false);
-  const [sellingStyle, setSellingStyle] = useState('Direct Inquiry Mode');
-  const [chatPersonality, setChatPersonality] = useState('Professional & Formal');
+  const [sellingStyle, setSellingStyle] = useState(() => storage.get('ai_selling_style') || 'Direct Inquiry Mode');
+  const [chatPersonality, setChatPersonality] = useState(() => storage.get('ai_chat_personality') || 'Professional & Formal');
+
+  const persistCategory = (cat: AgentCategory) => { setActiveCategory(cat); storage.set('ai_active_category', cat); };
+  const persistSellingStyle = (val: string) => { setSellingStyle(val); storage.set('ai_selling_style', val); };
+  const persistPersonality = (val: string) => { setChatPersonality(val); storage.set('ai_chat_personality', val); };
 
   return (
     <AnimatedPage className="space-y-8 pb-12">
@@ -35,7 +40,7 @@ const AIAgentsPage = () => {
             </div>
             AI Agents
           </h1>
-          <p className="sub-title tracking-[0.4em]">Master settings for all AA2000 Smart Agents</p>
+          <p className="sub-title tracking-[0.4em]">Configure AI assistants for sales, marketing, and support</p>
         </div>
         <div className="flex items-center gap-3">
            <button className="px-5 py-3 bg-white border border-surface-border rounded-2xl text-[10px] font-semibold uppercase tracking-widest flex items-center gap-2 hover:bg-slate-50 transition-all shadow-sm">
@@ -79,7 +84,7 @@ const AIAgentsPage = () => {
         ].map(cat => (
           <button 
             key={cat.id}
-            onClick={() => setActiveCategory(cat.id as any)}
+            onClick={() => persistCategory(cat.id as any)}
             className={cn(
               "px-8 py-3 rounded-xl text-[10px] font-semibold uppercase tracking-widest transition-all",
               activeCategory === cat.id 
@@ -115,7 +120,7 @@ const AIAgentsPage = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                    <div className="space-y-3">
                       <label className="sub-title">Selling Style</label>
-                       <select value={sellingStyle} onChange={e => setSellingStyle(e.target.value)} className="input-field">
+                        <select value={sellingStyle} onChange={e => persistSellingStyle(e.target.value)} className="input-field">
                           <option>Direct Inquiry Mode</option>
                           <option>Consultative Selling</option>
                           <option>Human Handoff (Forward to Sales)</option>
@@ -123,7 +128,7 @@ const AIAgentsPage = () => {
                    </div>
                    <div className="space-y-3">
                       <label className="sub-title">Chat Personality</label>
-                       <select value={chatPersonality} onChange={e => setChatPersonality(e.target.value)} className="input-field">
+                        <select value={chatPersonality} onChange={e => persistPersonality(e.target.value)} className="input-field">
                           <option>Professional & Formal</option>
                           <option>Friendly & Helpful</option>
                           <option>Technical Specialist</option>

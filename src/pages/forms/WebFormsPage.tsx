@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { Plus, FileText, Eye, Trash2, Code, ExternalLink, ListChecks } from 'lucide-react';
+import { Plus, FileText, Eye, Trash2, Code, ExternalLink, ListChecks, Edit } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { useFormsStore } from '../../stores/modules/formsStore';
 import { AnimatedPage } from '../../components/ui/AnimatedPage';
 
 export default function WebFormsPage() {
-  const { forms, submissions, addForm, addSubmission, deleteForm } = useFormsStore();
+  const { forms, submissions, addForm, updateForm, deleteForm, addSubmission, deleteSubmission } = useFormsStore();
   const [tab, setTab] = useState<'forms' | 'submissions'>('forms');
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState('');
@@ -37,7 +37,7 @@ export default function WebFormsPage() {
     <AnimatedPage className="space-y-6 pb-12">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-navy-900 tracking-tight">Web Forms Builder</h1>
+          <h1 className="text-2xl font-bold text-navy-900 tracking-tight">Web Forms</h1>
           <p className="text-xs text-slate-500 mt-0.5">Create forms for lead capture and data collection</p>
         </div>
         <button onClick={() => setShowForm(true)} className="px-4 py-2 bg-brand-blue text-white rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-brand-light transition-all shadow-sm">
@@ -81,6 +81,7 @@ export default function WebFormsPage() {
                 </div>
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
                   <button onClick={() => setPreviewForm(f.id)} className="p-1.5 text-slate-400 hover:text-brand-blue hover:bg-slate-50 rounded-lg"><Eye size={14} /></button>
+                  <button onClick={() => { const name = window.prompt('Form name:', f.name); if (name && name.trim()) updateForm(f.id, { name: name.trim() }); }} className="p-1.5 text-slate-400 hover:text-brand-blue hover:bg-slate-50 rounded-lg"><Edit size={14} /></button>
                   <button onClick={() => deleteForm(f.id)} className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg"><Trash2 size={14} /></button>
                 </div>
               </div>
@@ -109,10 +110,13 @@ export default function WebFormsPage() {
               <p className="text-sm text-slate-500">No submissions yet</p>
             </div>
           ) : submissions.map(sub => (
-            <div key={sub.id} className="glass-card p-4">
+            <div key={sub.id} className="glass-card p-4 group">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-xs text-slate-500 font-medium">{sub.createdAt}</p>
-                <span className="text-[10px] text-slate-400">Form: {forms.find(f => f.id === sub.formId)?.name || 'Unknown'}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-slate-400">Form: {forms.find(f => f.id === sub.formId)?.name || 'Unknown'}</span>
+                  <button onClick={() => deleteSubmission(sub.id)} className="p-1 text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={12} /></button>
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 {Object.entries(sub.data).map(([key, val]) => (

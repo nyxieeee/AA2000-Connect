@@ -35,7 +35,7 @@ export default function AIRecommendationsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-navy-900 tracking-tight">AI Recommendations</h1>
-          <p className="text-xs text-slate-500 mt-0.5">AI-powered next-step suggestions based on deal activity, engagement, and notes</p>
+          <p className="text-xs text-slate-500 mt-0.5">Smart suggestions on what to do next for each deal or lead</p>
         </div>
         <button onClick={handleGenerateDemo} className="px-4 py-2 bg-violet-600 text-white rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-violet-700 transition-all shadow-sm">
           <Sparkles size={16} /> Generate Sample

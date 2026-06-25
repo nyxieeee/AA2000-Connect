@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { Search, Building2, Globe, FileText, Lightbulb, AlertTriangle, RefreshCw } from 'lucide-react';
+import { Search, Building2, Globe, FileText, Lightbulb, AlertTriangle, RefreshCw, Trash2 } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { useCompanyResearchStore } from '../../stores/modules/companyResearchStore';
 import { useCRMStore } from '../../stores/modules/crmStore';
 
 export default function CompanyResearchPage() {
   const { companies } = useCRMStore();
-  const { upsertResearch, getResearchByCompany } = useCompanyResearchStore();
+  const { upsertResearch, deleteResearch, getResearchByCompany } = useCompanyResearchStore();
   const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [form, setForm] = useState({ industry: '', size: '', website: '', existingSystems: '', complianceGaps: '', salesAngle: '', keyContacts: '', notes: '' });
@@ -56,7 +56,7 @@ export default function CompanyResearchPage() {
     <div className="space-y-6 pb-12">
       <div>
         <h1 className="text-2xl font-bold text-navy-900 tracking-tight">AI Company Research</h1>
-        <p className="text-xs text-slate-500 mt-0.5">Research prospects before the first call — industry, systems, compliance gaps, and sales angle</p>
+        <p className="text-xs text-slate-500 mt-0.5">Research prospects before the first call</p>
       </div>
 
       <div className="grid grid-cols-3 gap-6">
@@ -96,6 +96,7 @@ export default function CompanyResearchPage() {
                     <RefreshCw size={14} /> AI Research
                   </button>
                   <button onClick={handleSave} className="px-3 py-1.5 text-xs font-bold text-white bg-brand-blue rounded-lg hover:bg-brand-light transition-all">Save Research</button>
+                  {existingResearch && <button onClick={() => { deleteResearch(selectedCompanyId!); setForm({ industry: '', size: '', website: '', existingSystems: '', complianceGaps: '', salesAngle: '', keyContacts: '', notes: '' }); }} className="px-3 py-1.5 text-xs font-semibold text-rose-600 border border-rose-200 rounded-lg hover:bg-rose-50 transition-all"><Trash2 size={14} className="inline mr-1" />Delete</button>}
                 </div>
               </div>
 

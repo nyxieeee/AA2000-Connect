@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { Send, MessageSquare, Plus, User } from 'lucide-react';
+import { Send, MessageSquare, Plus, User, Trash2 } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { useChatStore } from '../../stores/modules/chatStore';
 import { useAuthStore } from '../../stores/authStore';
 import { AnimatedPage, AnimatedList } from '../../components/ui/AnimatedPage';
 
 export default function ChatPage() {
-  const { channels, messages, activeChannelId, setActiveChannel, createChannel, sendMessage } = useChatStore();
+  const { channels, messages, activeChannelId, setActiveChannel, createChannel, sendMessage, deleteMessage, deleteChannel } = useChatStore();
   const user = useAuthStore(s => s.user);
   const [input, setInput] = useState('');
   const [showNewChannel, setShowNewChannel] = useState(false);
@@ -52,7 +52,7 @@ export default function ChatPage() {
         <AnimatedList className="flex-1 overflow-y-auto p-2 space-y-0.5">
           {channels.map(ch => (
             <button key={ch.id} onClick={() => setActiveChannel(ch.id)}
-              className={cn('w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all', activeChannelId === ch.id ? 'bg-brand-blue/10 text-brand-blue' : 'hover:bg-slate-50 text-slate-600')}>
+              className={cn('w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all group', activeChannelId === ch.id ? 'bg-brand-blue/10 text-brand-blue' : 'hover:bg-slate-50 text-slate-600')}>
               <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
                 {ch.isDm ? <User size={14} className="text-slate-500" /> : <MessageSquare size={14} className="text-slate-500" />}
               </div>
@@ -60,6 +60,7 @@ export default function ChatPage() {
                 <p className="text-xs font-bold truncate">{ch.name || 'Unnamed'}</p>
                 {ch.lastMessage && <p className="text-[9px] text-slate-400 truncate mt-0.5">{ch.lastMessage}</p>}
               </div>
+              <button onClick={(e) => { e.stopPropagation(); deleteChannel(ch.id); }} className="p-1 text-slate-300 hover:text-rose-500 rounded opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={12} /></button>
             </button>
           ))}
         </AnimatedList>
@@ -77,10 +78,13 @@ export default function ChatPage() {
                 const isMe = msg.senderId === user?.id;
                 return (
                   <div key={msg.id} className={cn('flex', isMe ? 'justify-end' : 'justify-start')}>
-                    <div className={cn('max-w-md px-4 py-2.5 rounded-2xl', isMe ? 'bg-brand-blue text-white' : 'bg-slate-100 text-navy-900')}>
+                    <div className={cn('max-w-md px-4 py-2.5 rounded-2xl group relative', isMe ? 'bg-brand-blue text-white' : 'bg-slate-100 text-navy-900')}>
                       {!isMe && <p className="text-[10px] font-bold text-brand-blue mb-0.5">{msg.senderName}</p>}
                       <p className="text-sm">{msg.content}</p>
-                      <p className={cn('text-[9px] mt-1', isMe ? 'text-white/60' : 'text-slate-400')}>{new Date(msg.sentAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</p>
+                      <div className="flex items-center justify-between gap-2">
+                        <p className={cn('text-[9px] mt-1', isMe ? 'text-white/60' : 'text-slate-400')}>{new Date(msg.sentAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</p>
+                        <button onClick={() => deleteMessage(msg.channelId, msg.id)} className="opacity-0 group-hover:opacity-100 text-[9px] text-slate-400 hover:text-rose-500 transition-all">Delete</button>
+                      </div>
                     </div>
                   </div>
                 );

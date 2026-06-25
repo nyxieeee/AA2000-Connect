@@ -31,6 +31,7 @@ interface SLAStore {
   deletePolicy: (id: string) => void;
   addEntry: (e: Omit<SLAEntry, 'id'>) => void;
   resolveEntry: (id: string) => void;
+  deleteEntry: (id: string) => void;
 }
 
 export const useSLAStore = create<SLAStore>((set, get) => ({
@@ -56,6 +57,10 @@ export const useSLAStore = create<SLAStore>((set, get) => ({
   },
   resolveEntry: (id) => {
     const updated = get().entries.map(e => e.id === id ? { ...e, status: 'resolved' as const, resolvedAt: new Date().toISOString() } : e);
+    storage.set('module_sla_entries', updated); set({ entries: updated });
+  },
+  deleteEntry: (id) => {
+    const updated = get().entries.filter(e => e.id !== id);
     storage.set('module_sla_entries', updated); set({ entries: updated });
   },
 }));

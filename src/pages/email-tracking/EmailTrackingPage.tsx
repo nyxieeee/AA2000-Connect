@@ -51,8 +51,8 @@ export default function EmailTrackingPage() {
       <div className="space-y-6 pb-12">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-navy-900 tracking-tight">Buying Signals</h1>
-          <p className="text-xs text-slate-500 mt-0.5">Detect purchase intent across email, Viber, WhatsApp, Facebook, Instagram, and website</p>
+          <h1 className="text-2xl font-bold text-navy-900 tracking-tight">Client Activity</h1>
+          <p className="text-xs text-slate-500 mt-0.5">Track client engagement across email, Viber, WhatsApp, Facebook, Instagram, and website</p>
         </div>
         <button onClick={() => setShowSimulate(true)} className="px-4 py-2 bg-brand-blue text-white rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-brand-light transition-all shadow-sm">
           <Plus size={16} /> Simulate Event

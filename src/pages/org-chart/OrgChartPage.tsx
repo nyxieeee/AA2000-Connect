@@ -54,7 +54,7 @@ export default function OrgChartPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-navy-900 tracking-tight">Organizational Chart</h1>
-          <p className="text-xs text-slate-500 mt-0.5">Map reporting lines and departments for corporate accounts</p>
+          <p className="text-xs text-slate-500 mt-0.5">See who works at each client company and who reports to who</p>
         </div>
         {selectedCompanyId && (
           <button onClick={() => setShowForm(true)} className="px-4 py-2 bg-brand-blue text-white rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-brand-light transition-all shadow-sm">

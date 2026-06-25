@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { AnimatedPage } from '../../components/ui/AnimatedPage';
+import { storage } from '../../services/storage';
 
 interface AIMission {
   id: string;
@@ -30,7 +31,7 @@ interface AIMission {
 }
 
 const AIAutomationsPage = () => {
-  const [missions] = useState<AIMission[]>([
+  const [missions, setMissions] = useState<AIMission[]>(() => storage.get('mktg_ai_missions') || [
     {
       id: '0',
       name: 'Demo Mission',
@@ -81,10 +82,14 @@ const AIAutomationsPage = () => {
     }
   ]);
 
-  const [missionStatuses, setMissionStatuses] = useState<Record<string, 'Running' | 'Paused' | 'Scheduled'>>({});
+  const [missionStatuses, setMissionStatuses] = useState<Record<string, 'Running' | 'Paused' | 'Scheduled'>>(() => storage.get('mktg_ai_statuses') || {});
+
+  const persistMissions = (updated: AIMission[]) => { setMissions(updated); storage.set('mktg_ai_missions', updated); };
+  const persistStatuses = (updated: Record<string, 'Running' | 'Paused' | 'Scheduled'>) => { setMissionStatuses(updated); storage.set('mktg_ai_statuses', updated); };
 
   const toggleMission = (id: string, current: string) => {
-    setMissionStatuses(prev => ({ ...prev, [id]: current === 'Running' ? 'Paused' : 'Running' }));
+    const next = current === 'Running' ? 'Paused' : 'Running';
+    persistStatuses({ ...missionStatuses, [id]: next });
   };
 
   return (
@@ -95,7 +100,7 @@ const AIAutomationsPage = () => {
             <Bot size={24} className="text-brand-blue" />
             AI Managed Campaigns
           </h2>
-          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Autonomous Marketing Missions</p>
+          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Run automated marketing campaigns powered by AI</p>
         </div>
         <button className="premium-button flex items-center gap-2 text-[10px] font-black uppercase tracking-widest px-6 py-3">
           <Sparkles size={16} />

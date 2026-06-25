@@ -29,8 +29,8 @@ export const MarketingLayout = () => {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-semibold text-navy-900 mb-1 tracking-tighter uppercase">Marketing Hub</h1>
-        <p className="text-slate-500 font-medium">Scale your brand and automate lead generation.</p>
+        <h1 className="text-3xl font-semibold text-navy-900 mb-1 tracking-tighter uppercase">Marketing</h1>
+        <p className="text-slate-500 font-medium">Create campaigns, schedule posts, and manage email marketing</p>
       </div>
 
       <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-2xl overflow-x-auto no-scrollbar border border-surface-border w-fit shadow-inner">

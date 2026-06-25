@@ -46,8 +46,38 @@ interface Conversation {
   isAnalyzingImage?: boolean;
 }
 
+const seedConversations: Conversation[] = [
+  { id: 1, name: 'Juan Dela Cruz', channel: 'Viber', lastMsg: 'Good morning! Ask ko lang po regarding quotation ng CCTV namin.', time: '2 min ago', unread: 2, avatar: 'JD', status: 'Lead', messages: [
+    { sender: 'them', text: 'Good morning! Ask ko lang po regarding quotation ng CCTV namin.', time: '2:34 PM' },
+    { sender: 'them', text: 'May pinadala po kayo last week na proposal, gusto ko sana magpa-add ng 2 cameras.', time: '2:35 PM' },
+  ], aiActive: true },
+  { id: 2, name: 'Maria Santos', channel: 'Facebook', lastMsg: 'Sige po, check ko na lang yung availability ng technician.', time: '15 min ago', unread: 1, avatar: 'MS', status: 'Client', messages: [
+    { sender: 'them', text: 'Na-schedule na po ba yung maintenance ng gate namin?', time: '3:00 PM' },
+    { sender: 'me', text: 'Sige po, check ko na lang yung availability ng technician.', time: '3:02 PM' },
+  ], aiActive: false },
+  { id: 3, name: 'Carlos Reyes', channel: 'WhatsApp', lastMsg: 'Will you be able to send the revised contract today?', time: '1 hr ago', unread: 0, avatar: 'CR', status: 'VIP', messages: [
+    { sender: 'them', text: 'Will you be able to send the revised contract today?', time: '1:00 PM' },
+  ], aiActive: true, needsHandover: true },
+  { id: 4, name: 'Ana Lim', channel: 'Website', lastMsg: 'How much po yung basic alarm system for a 2BR condo?', time: '3 hrs ago', unread: 0, avatar: 'AL', status: 'Lead', messages: [
+    { sender: 'them', text: 'How much po yung basic alarm system for a 2BR condo?', time: '11:00 AM' },
+  ], aiActive: true },
+  { id: 5, name: 'Ramon Bautista', channel: 'Instagram', lastMsg: 'Ganda ng bagong post niyo about solar! May pm po ako.', time: '1 day ago', unread: 0, avatar: 'RB', status: 'Lead', messages: [
+    { sender: 'them', text: 'Ganda ng bagong post niyo about solar! May pm po ako.', time: 'Yesterday' },
+  ], aiActive: false },
+  { id: 6, name: 'Grace Torres', channel: 'TikTok', lastMsg: 'Available pa po ba yung naka-feature na smart lock?', time: '2 days ago', unread: 0, avatar: 'GT', status: 'Client', messages: [
+    { sender: 'them', text: 'Available pa po ba yung naka-feature na smart lock?', time: '2 days ago' },
+  ], aiActive: false },
+  { id: 7, name: 'Robert Limjoco', channel: 'Email', lastMsg: 'Please find attached the signed contract for the annual maintenance.', time: '3 days ago', unread: 0, avatar: 'RL', status: 'VIP', messages: [
+    { sender: 'them', text: 'Please find attached the signed contract for the annual maintenance.', time: '3 days ago' },
+  ], aiActive: false },
+  { id: 8, name: 'Sofia Gonzales', channel: 'SMS', lastMsg: 'Reminder: may schedule po kami bukas ng 9am for fire alarm testing.', time: '5 days ago', unread: 0, avatar: 'SG', status: 'Client', messages: [
+    { sender: 'me', text: 'Reminder: may schedule po kami bukas ng 9am for fire alarm testing.', time: '5 days ago' },
+    { sender: 'them', text: 'Noted po, sir! Thanks for the heads up.', time: '5 days ago' },
+  ], aiActive: false },
+];
+
 const UnifiedInboxPage = () => {
-  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [conversations, setConversations] = useState<Conversation[]>(seedConversations);
 
   const [activeChatId, setActiveChatId] = useState<number | null>(null);
   const [msg, setMsg] = useState('');
@@ -108,7 +138,7 @@ const UnifiedInboxPage = () => {
       <div className="w-96 flex flex-col glass-card overflow-hidden">
         <div className="p-5 border-b border-surface-border space-y-4 bg-slate-50/30">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-bold text-navy-900 tracking-tight">Unified Inbox</h2>
+            <h2 className="text-sm font-bold text-navy-900 tracking-tight">Inbox</h2>
             <div className="flex gap-2">
                <button className="p-1.5 hover:bg-white rounded-lg transition-colors border border-transparent hover:border-slate-200">
                   <Filter size={16} className="text-slate-400" />

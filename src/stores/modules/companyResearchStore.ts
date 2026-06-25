@@ -20,6 +20,7 @@ interface CompanyResearchStore {
   research: CompanyResearch[];
   fetchResearch: () => void;
   upsertResearch: (data: Omit<CompanyResearch, 'id' | 'researchedAt'>) => void;
+  deleteResearch: (companyId: string) => void;
   getResearchByCompany: (companyId: string) => CompanyResearch | undefined;
 }
 
@@ -38,6 +39,10 @@ export const useCompanyResearchStore = create<CompanyResearchStore>((set, get) =
       const r: CompanyResearch = { ...data, id: `cr-${Date.now()}`, researchedAt: new Date().toISOString() };
       updated = [...get().research, r];
     }
+    storage.set('module_company_research', updated); set({ research: updated });
+  },
+  deleteResearch: (companyId) => {
+    const updated = get().research.filter(r => r.companyId !== companyId);
     storage.set('module_company_research', updated); set({ research: updated });
   },
   getResearchByCompany: (companyId) => {

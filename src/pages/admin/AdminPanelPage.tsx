@@ -3,6 +3,7 @@ import { Shield, Users, Palette, Key, Globe, MessageCircle, MessageSquare, Smart
 import { cn } from '../../utils/cn';
 import { useAuthStore } from '../../stores/authStore';
 import { AnimatedPage } from '../../components/ui/AnimatedPage';
+import { storage } from '../../services/storage';
 
 const initialUsers = [
   { id: '1', name: 'Authorized User', email: 'user@aa2000.ph', role: 'admin', department: 'Management' },
@@ -21,14 +22,16 @@ const roleColors: Record<string, string> = {
 export default function AdminPanelPage() {
   const { user } = useAuthStore();
   const [activeTab, setActiveTab] = useState<'users' | 'branding' | 'integrations'>('users');
-  const [users, setUsers] = useState(initialUsers);
-
-  const [branding, setBranding] = useState({
+  const [users, setUsers] = useState<typeof initialUsers>(() => storage.get('admin_users') || initialUsers);
+  const [branding, setBranding] = useState(() => storage.get('admin_branding') || {
     companyName: 'AA2000 Security & Technology Solutions Inc.',
     tagline: 'Leading Security & Automation Solutions in the Philippines',
     primaryColor: '#6366f1',
     secondaryColor: '#0f172a',
   });
+
+  const persistUsers = (updated: typeof initialUsers) => { setUsers(updated); storage.set('admin_users', updated); };
+  const persistBranding = (updated: typeof branding) => { setBranding(updated); storage.set('admin_branding', updated); };
 
   const integrations = [
     { id: 'viber', label: 'Viber API', desc: 'Connect your Viber bot for support.', icon: MessageCircle, color: 'text-purple-500', fields: ['Viber Auth Token'] },
@@ -46,13 +49,14 @@ export default function AdminPanelPage() {
 
   const addUser = () => {
     if (!newUser.name.trim() || !newUser.email.trim()) return;
-    setUsers(prev => [...prev, { ...newUser, id: `user-${Date.now()}` }]);
+    const updated = [...users, { ...newUser, id: `user-${Date.now()}` }];
+    persistUsers(updated);
     setNewUser({ name: '', email: '', role: 'sales_rep', department: 'Sales' });
     setShowUserForm(false);
   };
 
-  const deleteUser = (id: string) => setUsers(prev => prev.filter(u => u.id !== id));
-  const updateUserRole = (id: string, role: string) => setUsers(prev => prev.map(u => u.id === id ? { ...u, role } : u));
+  const deleteUser = (id: string) => persistUsers(users.filter(u => u.id !== id));
+  const updateUserRole = (id: string, role: string) => persistUsers(users.map(u => u.id === id ? { ...u, role } : u));
 
   const filteredUsers = users.filter(u =>
     !userSearch || u.name.toLowerCase().includes(userSearch.toLowerCase()) || u.email.toLowerCase().includes(userSearch.toLowerCase())
@@ -161,17 +165,17 @@ export default function AdminPanelPage() {
                 <h3 className="text-base font-semibold text-navy-900 uppercase tracking-widest">Company Branding</h3>
                 <p className="text-xs text-slate-400">Global aesthetic identity for AI Campaigns</p>
               </div>
-              <button onClick={() => { localStorage.setItem('admin_branding', JSON.stringify(branding)); alert('Branding saved successfully!'); }} className="ml-auto premium-button flex items-center gap-2 text-xs"><Save size={14} /> Save Changes</button>
+              <button onClick={() => { persistBranding(branding); alert('Branding saved successfully!'); }} className="ml-auto premium-button flex items-center gap-2 text-xs"><Save size={14} /> Save Changes</button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-6">
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Enterprise Name</label>
-                  <input type="text" value={branding.companyName} onChange={e => setBranding({...branding, companyName: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 border border-surface-border rounded-xl text-sm outline-none" />
+                  <input type="text" value={branding.companyName} onChange={e => persistBranding({...branding, companyName: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 border border-surface-border rounded-xl text-sm outline-none" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Brand Tagline</label>
-                  <textarea value={branding.tagline} onChange={e => setBranding({...branding, tagline: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 border border-surface-border rounded-xl text-sm outline-none min-h-[80px] resize-none" />
+                  <textarea value={branding.tagline} onChange={e => persistBranding({...branding, tagline: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 border border-surface-border rounded-xl text-sm outline-none min-h-[80px] resize-none" />
                 </div>
               </div>
               <div className="space-y-8">
@@ -190,14 +194,14 @@ export default function AdminPanelPage() {
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Primary Color</label>
                     <div className="flex items-center gap-2">
-                      <input type="color" value={branding.primaryColor} onChange={e => setBranding({...branding, primaryColor: e.target.value})} className="w-10 h-10 rounded-xl overflow-hidden border-none cursor-pointer" />
+                      <input type="color" value={branding.primaryColor} onChange={e => persistBranding({...branding, primaryColor: e.target.value})} className="w-10 h-10 rounded-xl overflow-hidden border-none cursor-pointer" />
                       <span className="text-xs font-mono font-semibold text-slate-400 uppercase">{branding.primaryColor}</span>
                     </div>
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Accent Color</label>
                     <div className="flex items-center gap-2">
-                      <input type="color" value={branding.secondaryColor} onChange={e => setBranding({...branding, secondaryColor: e.target.value})} className="w-10 h-10 rounded-xl overflow-hidden border-none cursor-pointer" />
+                      <input type="color" value={branding.secondaryColor} onChange={e => persistBranding({...branding, secondaryColor: e.target.value})} className="w-10 h-10 rounded-xl overflow-hidden border-none cursor-pointer" />
                       <span className="text-xs font-mono font-semibold text-slate-400 uppercase">{branding.secondaryColor}</span>
                     </div>
                   </div>

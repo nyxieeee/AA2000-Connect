@@ -24,6 +24,68 @@ interface PipelinesStore {
   deleteStage: (pipelineId: string, stageId: string) => void;
 }
 
+function getSeedPipelines(): Pipeline[] {
+  return [{
+    id: 'p-seed-001',
+    name: 'Sales Pipeline',
+    description: 'Track new opportunities from inquiry to closed deal',
+    stages: [
+      { id: 's-seed-001', name: 'New Inquiry', order: 0 },
+      { id: 's-seed-002', name: 'Qualified', order: 1 },
+      { id: 's-seed-003', name: 'Proposal Sent', order: 2 },
+      { id: 's-seed-004', name: 'Negotiation', order: 3 },
+      { id: 's-seed-005', name: 'Closed Won', order: 4 },
+      { id: 's-seed-006', name: 'Closed Lost', order: 5 },
+    ],
+  }];
+}
+
+function getSeedDeals(pipelineId: string): Deal[] {
+  return [
+    {
+      id: 'd-seed-001', title: 'Office Security System Upgrade', value: 450000,
+      stageId: 's-seed-003', pipelineId, contactId: 'c-seed-001',
+      companyName: 'MegaPlaza Corp', product: 'CCTV & Access Control',
+      status: 'Open', assigned: 'Juan Dela Cruz', createdAt: '2026-06-10T08:00:00Z',
+    },
+    {
+      id: 'd-seed-002', title: 'New Warehouse CCTV Installation', value: 320000,
+      stageId: 's-seed-001', pipelineId, contactId: 'c-seed-002',
+      companyName: 'Sunrise Properties', product: 'CCTV',
+      status: 'Open', assigned: 'Maria Santos', createdAt: '2026-06-18T10:30:00Z',
+    },
+    {
+      id: 'd-seed-003', title: 'Bank Branch Access Control Rollout', value: 890000,
+      stageId: 's-seed-004', pipelineId, contactId: 'c-seed-004',
+      companyName: 'MetroBank PH', product: 'Access Control',
+      status: 'Open', assigned: 'Maria Santos', createdAt: '2026-05-28T09:00:00Z',
+    },
+    {
+      id: 'd-seed-004', title: 'Residential Estate CCTV Installation', value: 250000,
+      stageId: 's-seed-002', pipelineId, contactId: 'c-seed-005',
+      companyName: 'Vista Homes', product: 'CCTV',
+      status: 'Open', assigned: 'Carlos Reyes', createdAt: '2026-06-20T11:00:00Z',
+    },
+    {
+      id: 'd-seed-005', title: 'Office Building Biometric Upgrade', value: 580000,
+      stageId: 's-seed-003', pipelineId, contactId: 'c-seed-006',
+      companyName: 'Regus PH', product: 'Biometrics & Access Control',
+      status: 'Open', assigned: 'Juan Dela Cruz', createdAt: '2026-06-15T14:00:00Z',
+    },
+  ];
+}
+
+function seedIfEmpty() {
+  const existing = storage.get<Pipeline[]>('crm_pipelines');
+  if (existing && existing.length > 0) return;
+  const pipelines = getSeedPipelines();
+  const deals = getSeedDeals(pipelines[0].id);
+  storage.set('crm_pipelines', pipelines);
+  storage.set('crm_deals', deals);
+}
+
+seedIfEmpty();
+
 export const usePipelinesStore = create<PipelinesStore>((set, get) => ({
   deals: storage.get<Deal[]>('crm_deals') || [],
   pipelines: storage.get<Pipeline[]>('crm_pipelines') || [],

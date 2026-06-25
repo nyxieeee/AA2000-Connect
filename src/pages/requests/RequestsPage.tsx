@@ -75,8 +75,8 @@ export default function RequestsPage() {
       <div className="space-y-6 pb-12">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-navy-900 tracking-tight">Service Requests</h1>
-          <p className="text-xs text-slate-500 mt-0.5">Intake, route, and track all incoming requests</p>
+          <h1 className="text-2xl font-bold text-navy-900 tracking-tight">PMS & CMS</h1>
+          <p className="text-xs text-slate-500 mt-0.5">Log and track preventive & corrective maintenance jobs from intake to completion</p>
         </div>
         <button onClick={() => { resetForm(); setShowForm(true); }} className="px-4 py-2 bg-brand-blue text-white rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-brand-light transition-all shadow-sm">
           <Plus size={16} /> New Request

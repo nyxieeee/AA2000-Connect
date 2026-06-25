@@ -59,7 +59,7 @@ const SettingsPage = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="section-title mb-1">Settings</h1>
-          <p className="sub-title tracking-[0.2em]">Configuration & Identity Management</p>
+          <p className="sub-title tracking-[0.2em]">Manage your profile, branding, and connected apps</p>
         </div>
         <button onClick={() => { localStorage.setItem('settings_branding', JSON.stringify(branding)); localStorage.setItem('settings_notifications', JSON.stringify(notifs)); alert('Settings saved successfully!'); }} className="premium-button flex items-center gap-2">
           <Save size={16} />

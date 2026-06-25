@@ -42,7 +42,7 @@ const SalesPerformance = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-navy-900 mb-1 tracking-tighter  uppercase">Sales Performance</h1>
-          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Executive Business Intelligence & Performance Dashboard</p>
+          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Track sales performance and pipeline metrics</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 px-4 py-2 bg-white border border-surface-border rounded-xl shadow-sm">

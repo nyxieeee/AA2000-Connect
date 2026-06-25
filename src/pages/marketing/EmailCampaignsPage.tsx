@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { AnimatedPage } from '../../components/ui/AnimatedPage';
+import { storage } from '../../services/storage';
 
 interface EmailTemplate {
   id: string;
@@ -26,7 +27,7 @@ interface EmailTemplate {
 
 const EmailCampaignsPage = () => {
   const [activeView, setActiveView] = useState<'Templates' | 'Campaigns' | 'Analytics'>('Templates');
-  const [templates] = useState<EmailTemplate[]>([
+  const [templates] = useState<EmailTemplate[]>(() => storage.get('mktg_email_templates') || [
     { 
       id: '1', 
       name: 'Residential Solar Welcome', 
@@ -59,7 +60,7 @@ const EmailCampaignsPage = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-black text-navy-900 uppercase tracking-tighter italic">Email Campaign Hub</h2>
-          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Enterprise outbound communications</p>
+          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Create and manage email campaigns</p>
         </div>
         <div className="flex bg-slate-100 p-1 rounded-xl border border-surface-border shadow-inner">
           {['Templates', 'Campaigns', 'Analytics'].map(view => (

@@ -20,8 +20,10 @@ interface FormsStore {
   forms: FormDef[];
   submissions: FormSub[];
   addForm: (form: Omit<FormDef, 'id' | 'createdAt'>) => void;
-  addSubmission: (formId: string, data: Record<string, any>) => void;
+  updateForm: (id: string, updates: Partial<Pick<FormDef, 'name' | 'fields'>>) => void;
   deleteForm: (id: string) => void;
+  addSubmission: (formId: string, data: Record<string, any>) => void;
+  deleteSubmission: (id: string) => void;
 }
 
 export const useFormsStore = create<FormsStore>((set, get) => ({
@@ -33,6 +35,10 @@ export const useFormsStore = create<FormsStore>((set, get) => ({
     const updated = [...get().forms, form];
     storage.set('module_forms', updated); set({ forms: updated });
   },
+  updateForm: (id, updates) => {
+    const updated = get().forms.map(f => f.id === id ? { ...f, ...updates } : f);
+    storage.set('module_forms', updated); set({ forms: updated });
+  },
   addSubmission: (formId, data) => {
     const sub: FormSub = { id: `sub-${Date.now()}`, formId, data, createdAt: new Date().toISOString() };
     const updated = [...get().submissions, sub];
@@ -41,5 +47,9 @@ export const useFormsStore = create<FormsStore>((set, get) => ({
   deleteForm: (id) => {
     const updated = get().forms.filter(f => f.id !== id);
     storage.set('module_forms', updated); set({ forms: updated });
+  },
+  deleteSubmission: (id) => {
+    const updated = get().submissions.filter(s => s.id !== id);
+    storage.set('module_form_submissions', updated); set({ submissions: updated });
   },
 }));

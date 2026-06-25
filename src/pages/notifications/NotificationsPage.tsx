@@ -1,4 +1,4 @@
-import { Bell, CheckCheck, MailOpen, AlertCircle, TrendingUp, MessageSquare, FileText } from 'lucide-react';
+import { Bell, CheckCheck, MailOpen, AlertCircle, TrendingUp, MessageSquare, FileText, Trash2 } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { useNotificationsStore } from '../../stores/modules/notificationsStore';
 import { AnimatedPage, AnimatedList } from '../../components/ui/AnimatedPage';
@@ -22,7 +22,7 @@ const COLOR_MAP: Record<string, string> = {
 };
 
 export default function NotificationsPage() {
-  const { notifications, markRead, markAllRead } = useNotificationsStore();
+  const { notifications, markRead, markAllRead, deleteNotification } = useNotificationsStore();
 
   const sorted = [...notifications].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
@@ -52,7 +52,7 @@ export default function NotificationsPage() {
           return (
             <div key={notif.id}
               onClick={() => markRead(notif.id)}
-              className={cn('glass-card p-4 flex items-start gap-3 cursor-pointer transition-all hover:border-brand-blue/20', !notif.read && 'border-l-4 border-l-brand-blue')}>
+              className={cn('glass-card p-4 flex items-start gap-3 cursor-pointer transition-all hover:border-brand-blue/20 group', !notif.read && 'border-l-4 border-l-brand-blue')}>
               <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center shrink-0', colorClass)}>
                 <Icon size={18} />
               </div>
@@ -61,7 +61,10 @@ export default function NotificationsPage() {
                 <p className="text-xs text-slate-500 mt-0.5">{notif.message}</p>
                 <p className="text-[9px] text-slate-400 mt-1">{notif.createdAt}</p>
               </div>
-              {!notif.read && <div className="w-2 h-2 rounded-full bg-brand-blue shrink-0 mt-2" />}
+              <div className="flex items-center gap-2 shrink-0">
+                {!notif.read && <div className="w-2 h-2 rounded-full bg-brand-blue shrink-0" />}
+                <button onClick={(e) => { e.stopPropagation(); deleteNotification(notif.id); }} className="p-1 text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={12} /></button>
+              </div>
             </div>
           );
         })}

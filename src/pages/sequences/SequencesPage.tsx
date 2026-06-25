@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Trash2, Play, Pause, ChevronRight, Mail, Clock, Bell, CheckSquare, ToggleLeft, ToggleRight, Users } from 'lucide-react';
+import { Plus, Trash2, Play, Pause, ChevronRight, Mail, Clock, Bell, CheckSquare, ToggleLeft, ToggleRight, Users, XCircle } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { useSequencesStore, type Sequence, type SequenceStep } from '../../stores/modules/sequencesStore';
 import { AnimatedPage, AnimatedList, AnimatedListItem } from '../../components/ui/AnimatedPage';
@@ -8,7 +8,7 @@ const triggerLabels: Record<string, string> = { lead_created: 'Lead Created', de
 const stepIcons: Record<string, typeof Mail> = { email: Mail, wait: Clock, notification: Bell, task: CheckSquare };
 
 export default function SequencesPage() {
-  const { sequences, enrollments, addSequence, updateSequence, deleteSequence, enroll, pauseEnrollment, advanceStep } = useSequencesStore();
+  const { sequences, enrollments, addSequence, updateSequence, deleteSequence, enroll, pauseEnrollment, advanceStep, deleteEnrollment } = useSequencesStore();
   const [showForm, setShowForm] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: '', description: '', trigger: 'manual' as Sequence['trigger'], triggerValue: '' });
@@ -46,8 +46,8 @@ export default function SequencesPage() {
       <div className="space-y-6 pb-12">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-navy-900 tracking-tight">Follow-up Sequences</h1>
-          <p className="text-xs text-slate-500 mt-0.5">Automated multi-step campaigns that trigger based on lead activity or deal stages</p>
+          <h1 className="text-2xl font-bold text-navy-900 tracking-tight">Follow-ups</h1>
+          <p className="text-xs text-slate-500 mt-0.5">Automated follow-up steps that trigger when a lead or deal updates</p>
         </div>
         <button onClick={() => setShowForm(true)} className="px-4 py-2 bg-brand-blue text-white rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-brand-light transition-all shadow-sm">
           <Plus size={16} /> New Sequence
@@ -157,6 +157,7 @@ export default function SequencesPage() {
                       <div className="flex gap-1">
                         <button onClick={() => advanceStep(enr.id)} className="px-2 py-1 text-[10px] font-semibold text-brand-blue bg-brand-blue/5 rounded-lg"><ChevronRight size={12} /></button>
                         <button onClick={() => pauseEnrollment(enr.id)} className="px-2 py-1 text-[10px] font-semibold text-amber-600 bg-amber-50 rounded-lg">{enr.status === 'active' ? <Pause size={12} /> : <Play size={12} />}</button>
+                        <button onClick={() => deleteEnrollment(enr.id)} className="px-2 py-1 text-[10px] font-semibold text-rose-600 bg-rose-50 rounded-lg"><XCircle size={12} /></button>
                       </div>
                     </div>
                   ))}

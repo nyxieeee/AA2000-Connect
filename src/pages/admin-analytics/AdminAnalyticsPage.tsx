@@ -2,6 +2,22 @@ import { useState } from 'react';
 import { BarChart3, Download, TrendingUp, Users, Target, Activity, FileText } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { AnimatedPage } from '../../components/ui/AnimatedPage';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+
+const CHART_DATA: Record<string, any[]> = {
+  'team-performance': [
+    { name: 'Anna', leads: 45, deals: 12 }, { name: 'Ben', leads: 38, deals: 9 }, { name: 'Carla', leads: 52, deals: 15 }, { name: 'Dennis', leads: 29, deals: 7 },
+  ],
+  'lead-volume': [
+    { name: 'Jan', leads: 120 }, { name: 'Feb', leads: 145 }, { name: 'Mar', leads: 98 }, { name: 'Apr', leads: 162 }, { name: 'May', leads: 188 }, { name: 'Jun', leads: 134 },
+  ],
+  'pipeline-health': [
+    { name: 'New', deals: 24 }, { name: 'Qualified', deals: 18 }, { name: 'Proposal', deals: 12 }, { name: 'Negotiation', deals: 7 }, { name: 'Closed Won', deals: 9 }, { name: 'Closed Lost', deals: 5 },
+  ],
+  'app-usage': [
+    { name: 'Mon', users: 22 }, { name: 'Tue', users: 26 }, { name: 'Wed', users: 24 }, { name: 'Thu', users: 28 }, { name: 'Fri', users: 20 }, { name: 'Sat', users: 8 }, { name: 'Sun', users: 3 },
+  ],
+};
 
 const REPORTS = [
   { id: 'team-performance', name: 'Team Performance', type: 'team_performance', icon: Users, description: 'Conversion rates, lead volume, and activity by rep' },
@@ -18,7 +34,7 @@ export default function AdminAnalyticsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-navy-900 tracking-tight">Admin Analytics</h1>
-          <p className="text-xs text-slate-500 mt-0.5">Cross-team reports and partner-facing exports</p>
+          <p className="text-xs text-slate-500 mt-0.5">Reports on team performance, leads, and system usage</p>
         </div>
       </div>
 
@@ -38,9 +54,17 @@ export default function AdminAnalyticsPage() {
 
             {selectedReport === report.id && (
               <div className="mt-4 pt-4 border-t border-surface-border space-y-3 animate-in">
-                <div className="h-48 bg-slate-50 rounded-2xl border border-surface-border flex items-center justify-center">
-                  <BarChart3 size={32} className="text-slate-300" strokeWidth={1} />
-                  <span className="text-sm text-slate-400 ml-2">Chart preview (coming soon)</span>
+                <div className="h-48 bg-white rounded-2xl border border-surface-border p-4">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={CHART_DATA[report.id] || []}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                      <XAxis dataKey="name" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
+                      <YAxis hide />
+                      <Tooltip />
+                      <Bar dataKey={report.id === 'team-performance' ? 'deals' : report.id === 'pipeline-health' ? 'deals' : report.id === 'app-usage' ? 'users' : 'leads'} fill="#6366f1" radius={[4, 4, 0, 0]} />
+                      {report.id === 'team-performance' && <Bar dataKey="leads" fill="#a5b4fc" radius={[4, 4, 0, 0]} />}
+                    </BarChart>
+                  </ResponsiveContainer>
                 </div>
                 <div className="flex items-center gap-2">
                   <button className="px-4 py-2 text-xs font-bold text-white bg-brand-blue rounded-xl hover:bg-brand-light transition-all flex items-center gap-1.5">

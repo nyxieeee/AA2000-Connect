@@ -30,6 +30,8 @@ interface ChatStore {
   setActiveChannel: (id: string | null) => void;
   fetchMessages: (channelId: string) => void;
   sendMessage: (channelId: string, senderId: string, senderName: string, content: string) => void;
+  deleteMessage: (channelId: string, messageId: string) => void;
+  deleteChannel: (channelId: string) => void;
 }
 
 export const useChatStore = create<ChatStore>((set, get) => ({
@@ -60,5 +62,19 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 
     const channels = get().channels.map(c => c.id === channelId ? { ...c, lastMessage: content, lastMessageAt: new Date().toISOString() } : c);
     storage.set('module_chat_channels', channels); set({ channels });
+  },
+  deleteMessage: (channelId, messageId) => {
+    const messages = get().messages;
+    const channelMessages = (messages[channelId] || []).filter(m => m.id !== messageId);
+    const updated = { ...messages, [channelId]: channelMessages };
+    storage.set('module_chat_messages', updated); set({ messages: updated });
+  },
+  deleteChannel: (channelId) => {
+    const updatedChannels = get().channels.filter(c => c.id !== channelId);
+    storage.set('module_chat_channels', updatedChannels); set({ channels: updatedChannels });
+    const messages = get().messages;
+    const { [channelId]: _, ...updatedMessages } = messages;
+    storage.set('module_chat_messages', updatedMessages); set({ messages: updatedMessages });
+    if (get().activeChannelId === channelId) set({ activeChannelId: null });
   },
 }));

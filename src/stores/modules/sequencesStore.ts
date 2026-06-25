@@ -41,6 +41,7 @@ interface SequencesStore {
   enroll: (enrollment: Omit<SequenceEnrollment, 'id' | 'startedAt'>) => void;
   advanceStep: (enrollmentId: string) => void;
   pauseEnrollment: (enrollmentId: string) => void;
+  deleteEnrollment: (id: string) => void;
 }
 
 export const useSequencesStore = create<SequencesStore>((set, get) => ({
@@ -78,6 +79,10 @@ export const useSequencesStore = create<SequencesStore>((set, get) => ({
         ? { ...e, status: e.status === 'active' ? 'paused' : 'active' } as SequenceEnrollment
         : e
     );
+    storage.set('module_seq_enrollments', updated); set({ enrollments: updated });
+  },
+  deleteEnrollment: (id) => {
+    const updated = get().enrollments.filter(e => e.id !== id);
     storage.set('module_seq_enrollments', updated); set({ enrollments: updated });
   },
 }));
