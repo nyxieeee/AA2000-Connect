@@ -30,7 +30,7 @@ interface GroundedSearchResult {
   is_trusted: boolean;
 }
 
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || 'REDACTED_KEY';
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
 const KnowledgeBasePage = () => {
   const { articles } = useKnowledgeBaseStore();

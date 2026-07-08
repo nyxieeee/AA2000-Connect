@@ -19,7 +19,7 @@ interface GroundedProductResult {
   category: string;
   is_trusted: boolean;
 }
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || 'REDACTED_KEY';
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
 const renderCleanSpecs = (text: string) => {
   if (!text) return null;
