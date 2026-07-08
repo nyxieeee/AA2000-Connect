@@ -401,7 +401,7 @@ const AIAgentsPage = () => {
 
                 <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
                   <button type="button" onClick={() => setShowDeployModal(false)} className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-xl text-xs font-bold uppercase tracking-wider transition-all">Cancel</button>
-                  <button type="submit" className="premium-button text-xs flex items-center gap-1.5"><Sparkles size={14} /> Deploy Node</button>
+                  <button type="submit" className="premium-button text-xs flex items-center gap-1.5"><Sparkles size={14} /> Deploy AI</button>
                 </div>
               </form>
             </motion.div>
