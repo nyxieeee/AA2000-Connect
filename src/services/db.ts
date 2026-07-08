@@ -104,7 +104,7 @@ export interface Deal {
     name?: string;
     email?: string;
     phone?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
   createdAt: string;
 }

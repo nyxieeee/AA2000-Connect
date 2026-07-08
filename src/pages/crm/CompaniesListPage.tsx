@@ -28,6 +28,7 @@ const CompaniesListPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [editingCompany, setEditingCompany] = useState<any>(null);
   const [typeFilter, setTypeFilter] = useState<string>('All');
   const [showFilterMenu, setShowFilterMenu] = useState(false);
@@ -53,7 +54,7 @@ const CompaniesListPage = () => {
   const filteredCompanies = companies.filter(company => {
     const matchesSearch = company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       company.industry.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = typeFilter === 'All' || (company as any).type === typeFilter;
+    const matchesType = typeFilter === 'All' || (company as unknown as { type: string }).type === typeFilter;
     return matchesSearch && matchesType;
   });
 
@@ -82,7 +83,7 @@ const CompaniesListPage = () => {
   const handleExportCSV = () => {
     const headers = ['Name', 'Type', 'Industry', 'Website', 'Value', 'Status', 'Created At'];
     const rows = filteredCompanies.map(c => [
-      c.name, (c as any).type || 'End User', c.industry, c.website, (c.value || 0).toString(), c.status, c.createdAt
+      c.name, (c as unknown as { type: string }).type || 'End User', c.industry, c.website, (c.value || 0).toString(), c.status, c.createdAt
     ]);
     const csv = [headers.join(','), ...rows.map(r => r.map(v => `"${v}"`).join(','))].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
@@ -181,9 +182,9 @@ const CompaniesListPage = () => {
                 <div className="flex items-center gap-1">
                   <span className={cn(
                     "px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider border",
-                    getTypeBadge((company as any).type)
+                    getTypeBadge((company as unknown as { type: string }).type)
                   )}>
-                    {(company as any).type || 'End User'}
+                    {(company as unknown as { type: string }).type || 'End User'}
                   </span>
                   <button 
                     onClick={() => {

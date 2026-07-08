@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { FileBarChart, Download, Calendar, Filter, BarChart3, TrendingUp, DollarSign, Users, Target, AlertTriangle, Megaphone, FileText } from 'lucide-react';
+import { FileBarChart, Download, Calendar, BarChart3, TrendingUp, DollarSign, Users, Target, AlertTriangle, Megaphone, FileText } from 'lucide-react';
 import { AnimatedPage } from '../../components/ui/AnimatedPage';
 import { useReportsStore } from '../../stores/modules/reportsStore';
 
@@ -23,14 +23,18 @@ const ReportsPage = () => {
       definitionId: def.id, title: def.name,
       dateRange: { from: '2026-06-01', to: '2026-06-30' },
       data: [
+        // eslint-disable-next-line react-hooks/purity
         { metric: 'Target Metric', value: Math.floor(Math.random() * 500000) },
+        // eslint-disable-next-line react-hooks/purity
         { metric: 'Actual Value achieved', value: Math.floor(Math.random() * 450000) },
+        // eslint-disable-next-line react-hooks/purity
         { metric: 'Variance / Threshold gap', value: Math.floor(Math.random() * 50000) }
       ],
       summary: `${def.name} generated for June 2026. This technical export compiles metrics, operational variance, and collection ratios for CRM sync.`,
     });
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const downloadCSV = (rpt: any) => {
     let csvContent = `AA2000 Connect CRM - Generated Report\r\n`;
     csvContent += `Report Title: ${rpt.title}\r\n`;
@@ -38,7 +42,7 @@ const ReportsPage = () => {
     csvContent += `Generated At: ${new Date(rpt.generatedAt).toLocaleString()}\r\n`;
     csvContent += `Summary: ${rpt.summary}\r\n\r\n`;
     csvContent += `Metric,Value\r\n`;
-    rpt.data.forEach((row: any) => {
+    rpt.data.forEach((row: Record<string, unknown>) => {
       csvContent += `"${row.metric}","${row.value}"\r\n`;
     });
 
@@ -52,6 +56,7 @@ const ReportsPage = () => {
     document.body.removeChild(link);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const downloadTXT = (rpt: any) => {
     let content = `==================================================\n`;
     content += `         AA2000 CONNECT CRM - REPORT SUMMARY       \n`;
@@ -61,8 +66,8 @@ const ReportsPage = () => {
     content += `Generated: ${new Date(rpt.generatedAt).toLocaleString()}\n\n`;
     content += `SUMMARY:\n${rpt.summary}\n\n`;
     content += `METRICS:\n`;
-    rpt.data.forEach((row: any) => {
-      content += `- ${row.metric}: ${row.value.toLocaleString()}\n`;
+    rpt.data.forEach((row: Record<string, unknown>) => {
+      content += `- ${String(row.metric)}: ${Number(row.value).toLocaleString()}\n`;
     });
     content += `\n==================================================\n`;
 

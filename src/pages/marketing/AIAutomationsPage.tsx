@@ -31,7 +31,7 @@ interface AIMission {
 }
 
 const AIAutomationsPage = () => {
-  const [missions, setMissions] = useState<AIMission[]>(() => storage.get('mktg_ai_missions') || [
+  const [missions] = useState<AIMission[]>(() => storage.get('mktg_ai_missions') || [
     {
       id: '0',
       name: 'Demo Mission',
@@ -84,7 +84,6 @@ const AIAutomationsPage = () => {
 
   const [missionStatuses, setMissionStatuses] = useState<Record<string, 'Running' | 'Paused' | 'Scheduled'>>(() => storage.get('mktg_ai_statuses') || {});
 
-  const persistMissions = (updated: AIMission[]) => { setMissions(updated); storage.set('mktg_ai_missions', updated); };
   const persistStatuses = (updated: Record<string, 'Running' | 'Paused' | 'Scheduled'>) => { setMissionStatuses(updated); storage.set('mktg_ai_statuses', updated); };
 
   const toggleMission = (id: string, current: string) => {

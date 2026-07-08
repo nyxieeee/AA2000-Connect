@@ -7,7 +7,7 @@ interface WorkflowNodeData {
   type?: 'trigger' | 'action' | 'condition';
   iconType?: string;
   description?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 const icons: Record<string, React.ElementType> = {

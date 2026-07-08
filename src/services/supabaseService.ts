@@ -112,6 +112,7 @@ export const chatApi = {
     send: (data: Omit<ChatMessage, 'id' | 'sent_at'>) => supabase.from('chat_messages').insert(data).select().single(),
     subscribe: (channelId: string, callback: (msg: ChatMessage) => void) =>
       supabase.channel(`chat:${channelId}`)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `channel_id=eq.${channelId}` }, (payload: any) => callback(payload.new as ChatMessage))
         .subscribe(),
   },

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Bot, Send, BookOpen, MessageSquare, Sparkles } from 'lucide-react';
+import { Bot, Send, BookOpen, Sparkles } from 'lucide-react';
+import axios from 'axios';
 import { AnimatedPage } from '../../components/ui/AnimatedPage';
 import { usePolicyCenterStore } from '../../stores/modules/policyCenterStore';
 
@@ -72,6 +73,19 @@ const renderCleanMessage = (text: string) => {
   );
 };
 
+const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
+const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+
+const SYSTEM_PROMPT = `You are Ato, an AI assistant for AA2000, a Philippine security and low-voltage systems company. You help employees with:
+
+- Product information (CCTV, fire alarms, access control, intercoms, structured cabling, etc.)
+- Technical specifications and compatibility
+- Company policies (discounts, incentives, quotations, pipeline stages)
+- Sales procedures and CRM usage
+- Internal SOPs and manuals
+
+Be concise, factual, and professional. When discussing products, include relevant specs. When discussing policies, cite the policy name. If you don't know something, say so — don't hallucinate.`;
+
 function findResponse(query: string): { answer: string; citations: { title: string; section: string }[] } {
   const q = query.toLowerCase();
   for (const [key, val] of Object.entries(AI_RESPONSES)) {
@@ -99,15 +113,56 @@ const AIKnowledgePage = () => {
     const query = text || input;
     if (!query.trim()) return;
 
+    // eslint-disable-next-line react-hooks/purity
     const userMsg: ChatMessage = { id: `msg-${Date.now()}`, role: 'user', content: query };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setLoading(true);
 
-    // Simulate AI delay
-    await new Promise(r => setTimeout(r, 800 + Math.random() * 800));
+    const policyContext = policies.map(p => `- ${p.title} (v${p.version})`).join('\n');
 
+    if (GROQ_API_KEY) {
+      try {
+        const conversationHistory = messages
+          .filter(m => m.id !== 'welcome')
+          .slice(-10)
+          .map(m => ({ role: m.role, content: m.content }));
+
+        const { data } = await axios.post(
+          GROQ_API_URL,
+          {
+            model: 'gpt-oss-120b',
+            messages: [
+              { role: 'system', content: `${SYSTEM_PROMPT}\n\nAvailable policies:\n${policyContext}` },
+              ...conversationHistory,
+              { role: 'user', content: query },
+            ],
+            temperature: 0.7,
+            max_tokens: 1024,
+          },
+          {
+            headers: {
+              'Authorization': `Bearer ${GROQ_API_KEY}`,
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+
+        const answer = data.choices?.[0]?.message?.content || 'No response generated.';
+        // eslint-disable-next-line react-hooks/purity
+        const aiMsg: ChatMessage = { id: `msg-${Date.now() + 1}`, role: 'assistant', content: answer };
+        setMessages(prev => [...prev, aiMsg]);
+        setLoading(false);
+        return;
+      } catch {
+        // Fall through to rule-based fallback
+      }
+    }
+
+    // Fallback: rule-based responses
+    await new Promise(r => setTimeout(r, 800 + Math.random() * 800));
     const response = findResponse(query);
+    // eslint-disable-next-line react-hooks/purity
     const aiMsg: ChatMessage = { id: `msg-${Date.now() + 1}`, role: 'assistant', content: response.answer, citations: response.citations };
     setMessages(prev => [...prev, aiMsg]);
     setLoading(false);

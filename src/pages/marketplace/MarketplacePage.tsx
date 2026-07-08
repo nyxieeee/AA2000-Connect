@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Store, MessageSquare, ShoppingBag, Plus, Eye, Users, Send, Tag, Filter } from 'lucide-react';
+import { Store, MessageSquare, ShoppingBag, Plus, Eye, Users, Send, Tag } from 'lucide-react';
 import { AnimatedPage } from '../../components/ui/AnimatedPage';
 import { useMarketplaceStore } from '../../stores/modules/marketplaceStore';
 

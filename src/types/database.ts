@@ -428,6 +428,7 @@ export interface Database {
       notifications: { Row: Notification };
       tasks: { Row: Task };
       notes: { Row: Note };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       workflow_templates: { Row: any };
       sequences: { Row: Sequence };
       sequence_enrollments: { Row: SequenceEnrollment };
@@ -444,6 +445,7 @@ export interface Database {
       user_roles: { Row: UserRole };
       audit_logs: { Row: AuditLog };
       data_subject_requests: { Row: DataSubjectRequest };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       migration_log: { Row: any };
       saved_reports: { Row: SavedReport };
     };

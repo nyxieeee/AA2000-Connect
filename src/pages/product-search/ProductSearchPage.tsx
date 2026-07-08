@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Package, Search, Filter, Grid3X3, List, Tag, Link2, X, ChevronRight, Globe, ExternalLink, Loader2, ArrowRight, ShieldCheck, Sparkles } from 'lucide-react';
+import { Package, Search, Filter, Grid3X3, List, Link2, X, Globe, ExternalLink, Loader2, ArrowRight, ShieldCheck, Sparkles } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { AnimatedPage } from '../../components/ui/AnimatedPage';
 import { useProductCatalogStore, type Product } from '../../stores/modules/productCatalogStore';
@@ -165,6 +165,7 @@ const ProductSearchPage = () => {
 
       if (groundingChunks.length > 0) {
         const results: GroundedProductResult[] = groundingChunks
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           .map((chunk: any, index: number) => {
             const web = chunk.web || {};
             let uri = web.uri || '';
@@ -173,13 +174,12 @@ const ProductSearchPage = () => {
             if (uri.includes('google.com') || uri.includes('vertexaisearch.cloud.google.com')) {
               try {
                 const urlParams = new URLSearchParams(uri.split('?')[1]);
-                for (const [key, value] of urlParams.entries()) {
+                urlParams.forEach((value) => {
                   if (value.startsWith('http://') || value.startsWith('https://')) {
                     uri = value;
-                    break;
                   }
-                }
-              } catch (e) {
+                });
+              } catch {
                 const match = uri.match(/[?&](?:q|click_url|url)=([^&]+)/);
                 if (match) uri = decodeURIComponent(match[1]);
               }
@@ -196,6 +196,7 @@ const ProductSearchPage = () => {
               cat = 'OEM / Vendor Site';
             }
 
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const support = groundingSupports.find((s: any) =>
               s.groundingChunkIndices?.includes(index)
             );

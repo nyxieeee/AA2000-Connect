@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   DollarSign, FileText, ChevronRight, Plus, Filter,
-  Clock, CheckCircle2, AlertCircle, Send, RotateCcw, X
+  Clock, CheckCircle2, AlertCircle, Send, X
 } from 'lucide-react';
 import { AnimatedPage } from '../../components/ui/AnimatedPage';
 import { useIncentivesStore, type IncentiveStatus } from '../../stores/modules/incentivesStore';

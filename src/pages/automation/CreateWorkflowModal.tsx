@@ -14,6 +14,7 @@ interface Props {
   onCreated: (workflowId: string) => void;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const ICON_MAP: Record<string, any> = {
   Bell, Clock, Trophy, FileText, CalendarCheck, UserPlus, Gift, TrendingDown
 };

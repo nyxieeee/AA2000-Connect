@@ -26,6 +26,7 @@ const SettingsPage = () => {
   const { user } = useAuthStore();
   const [activeTab, setActiveTab] = useState<'Profile' | 'Branding' | 'Integrations' | 'Notifications'>('Profile');
   const [isKeyModalOpen, setIsKeyModalOpen] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [selectedIntegration, setSelectedIntegration] = useState<any>(null);
   const [apiKeyValues, setApiKeyValues] = useState<Record<string, string>>({});
 
@@ -76,6 +77,7 @@ const SettingsPage = () => {
         {tabs.map(tab => (
           <button 
             key={tab}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             onClick={() => setActiveTab(tab as any)}
             className={cn(
               "px-6 py-2 rounded-xl text-[10px] font-semibold uppercase tracking-widest transition-all",

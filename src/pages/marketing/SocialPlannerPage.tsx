@@ -96,6 +96,7 @@ const SocialPlannerPage = () => {
     const postToAdd: ScheduledPost = {
       id: Math.random().toString(36).substr(2, 9),
       day: newPost.day || 1,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       platform: newPost.platform as any,
       title: newPost.title || '',
       color,
@@ -481,6 +482,7 @@ const SocialPlannerPage = () => {
                     <label className="sub-title">Broadcast Channel</label>
                     <select 
                       value={newPost.platform}
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
                       onChange={(e) => setNewPost({ ...newPost, platform: e.target.value as any })}
                       className="input-field cursor-pointer"
                     >

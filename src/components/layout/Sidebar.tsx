@@ -48,6 +48,7 @@ import { useAuthStore, type UserRole } from '../../stores/authStore';
 import { cn } from '../../utils/cn';
 
 interface NavItem {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   icon: React.ComponentType<any>;
   label: string;
   path: string;

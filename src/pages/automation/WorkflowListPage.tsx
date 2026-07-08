@@ -7,7 +7,7 @@ import CreateWorkflowModal from './CreateWorkflowModal';
 
 interface Props { onOpen: (wf: Workflow) => void; onCreateNew: (folderId?: string) => void; }
 
-const APPROVAL_BADGES: Record<ApprovalStatus, { label: string; className: string; icon: any }> = {
+const APPROVAL_BADGES: Record<ApprovalStatus, { label: string; className: string; icon: React.ElementType }> = {
   draft: { label: 'Draft', className: 'text-slate-500 bg-slate-50 border-slate-200', icon: Clock },
   pending_approval: { label: 'Pending Approval', className: 'text-amber-600 bg-amber-50 border-amber-200', icon: Hourglass },
   approved: { label: 'Approved', className: 'text-blue-600 bg-blue-50 border-blue-200', icon: CheckCircle2 },

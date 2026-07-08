@@ -1,6 +1,8 @@
 export interface AIWorkflowResult {
   name: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   nodes: any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   edges: any[];
   description: string;
 }
@@ -116,7 +118,9 @@ export async function buildWorkflowFromPrompt(prompt: string): Promise<AIWorkflo
   const actionTypes = extractActions(prompt);
   const waitDays = extractWaitingPeriod(prompt);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const nodes: any[] = [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const edges: any[] = [];
 
   let y = 20;

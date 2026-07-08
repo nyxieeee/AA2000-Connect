@@ -9,7 +9,7 @@ import { cn } from '../../utils/cn';
 import { AnimatedPage } from '../../components/ui/AnimatedPage';
 import { useAIAgentsStore, type AIAgent, type AgentCategory } from '../../stores/modules/aiAgentsStore';
 
-const CATEGORY_ICONS: Record<AgentCategory, any> = {
+const CATEGORY_ICONS: Record<AgentCategory, React.ElementType> = {
   Conversational: MessageSquare,
   Marketing: Zap,
   Sales: Target,
@@ -342,7 +342,7 @@ const AIAgentsPage = () => {
                   </div>
                   <div className="space-y-1">
                     <label className="sub-title">Schedule Cadence</label>
-                    <select className="input-field" value={form.schedule} onChange={e => setForm(f => ({ ...f, schedule: e.target.value as any }))}>
+                    <select className="input-field" value={form.schedule} onChange={e => setForm(f => ({ ...f, schedule: e.target.value as AIAgent['schedule'] }))}>
                       <option value="on_demand">On Demand</option>
                       <option value="daily">Daily</option>
                       <option value="weekly">Weekly</option>

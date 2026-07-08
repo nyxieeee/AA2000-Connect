@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Library, Search, Tag, BookOpen, FileText, Plus,
+  Library, Search, Tag, Plus,
   Globe, ExternalLink, ShieldCheck, Sparkles, Loader2, ArrowRight
 } from 'lucide-react';
 import { AnimatedPage } from '../../components/ui/AnimatedPage';
@@ -98,6 +98,7 @@ const KnowledgeBasePage = () => {
 
       if (groundingChunks.length > 0) {
         const results: GroundedSearchResult[] = groundingChunks
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           .map((chunk: any, index: number) => {
             const web = chunk.web || {};
             let uri = web.uri || '';
@@ -107,13 +108,12 @@ const KnowledgeBasePage = () => {
             if (uri.includes('google.com') || uri.includes('vertexaisearch.cloud.google.com')) {
               try {
                 const urlParams = new URLSearchParams(uri.split('?')[1]);
-                for (const [key, value] of urlParams.entries()) {
+                urlParams.forEach((value) => {
                   if (value.startsWith('http://') || value.startsWith('https://')) {
                     uri = value;
-                    break;
                   }
-                }
-              } catch (e) {
+                });
+              } catch {
                 const match = uri.match(/[?&](?:q|click_url|url)=([^&]+)/);
                 if (match) uri = decodeURIComponent(match[1]);
               }
@@ -133,6 +133,7 @@ const KnowledgeBasePage = () => {
               cat = 'Global Standard';
             }
 
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const support = groundingSupports.find((s: any) =>
               s.groundingChunkIndices?.includes(index)
             );

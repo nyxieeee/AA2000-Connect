@@ -73,7 +73,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     const updatedChannels = get().channels.filter(c => c.id !== channelId);
     storage.set('module_chat_channels', updatedChannels); set({ channels: updatedChannels });
     const messages = get().messages;
-    const { [channelId]: _, ...updatedMessages } = messages;
+    const updatedMessages = { ...messages }; delete updatedMessages[channelId];
     storage.set('module_chat_messages', updatedMessages); set({ messages: updatedMessages });
     if (get().activeChannelId === channelId) set({ activeChannelId: null });
   },

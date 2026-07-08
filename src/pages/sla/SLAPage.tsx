@@ -79,7 +79,7 @@ export default function SLAPage() {
           <div className="p-4 bg-slate-50 rounded-xl space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="Policy name *" className="px-3 py-2 bg-white border border-surface-border rounded-lg text-sm outline-none" />
-              <select value={form.scope} onChange={e => setForm(p => ({ ...p, scope: e.target.value as any }))} className="px-3 py-2 bg-white border border-surface-border rounded-lg text-sm outline-none">
+              <select value={form.scope} onChange={e => setForm(p => ({ ...p, scope: e.target.value as 'lead' | 'ticket' | 'approval' | 'deal' }))} className="px-3 py-2 bg-white border border-surface-border rounded-lg text-sm outline-none">
                 <option value="lead">Lead Response</option><option value="ticket">Support Ticket</option><option value="approval">Approval</option><option value="deal">Deal Stage</option>
               </select>
               <input value={form.responseMinutes} onChange={e => setForm(p => ({ ...p, responseMinutes: parseInt(e.target.value) || 30 }))} type="number" placeholder="Response time (minutes)" className="px-3 py-2 bg-white border border-surface-border rounded-lg text-sm outline-none" />

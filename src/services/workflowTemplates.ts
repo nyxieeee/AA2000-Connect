@@ -5,7 +5,9 @@ export interface WorkflowTemplate {
   category: 'lead_capture' | 'follow_up' | 'notification' | 'deal_management' | 'meeting' | 'engagement';
   icon: string;
   popularity: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   nodes: any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   edges: any[];
 }
 

@@ -13,6 +13,7 @@ export interface FormDef {
 export interface FormSub {
   id: string;
   formId: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: Record<string, any>;
   createdAt: string;
 }
@@ -23,6 +24,7 @@ interface FormsStore {
   addForm: (form: Omit<FormDef, 'id' | 'createdAt'>) => void;
   updateForm: (id: string, updates: Partial<Pick<FormDef, 'name' | 'fields'>>) => void;
   deleteForm: (id: string) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   addSubmission: (formId: string, data: Record<string, any>) => void;
   deleteSubmission: (id: string) => void;
 }

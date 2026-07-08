@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Gavel, Calendar, FileCheck, Users, AlertTriangle, TrendingUp, Clock, Plus, Target, DollarSign, FileText, Trash2, X } from 'lucide-react';
+import { Gavel, Calendar, FileCheck, Users, Clock, Plus, Target, DollarSign, FileText, Trash2, X } from 'lucide-react';
 import { AnimatedPage } from '../../components/ui/AnimatedPage';
 import { useBiddingStore, type BidStatus, type Bid } from '../../stores/modules/biddingStore';
 
@@ -250,7 +250,7 @@ const BiddingPage = () => {
                 <div className="grid grid-cols-3 gap-3">
                   <div>
                     <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Category</label>
-                    <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value as any })}
+                    <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value as 'goods' | 'infrastructure' | 'consulting' })}
                       className="w-full px-3 py-2 bg-slate-50 border border-surface-border rounded-xl text-sm outline-none focus:ring-2 focus:ring-brand-blue/10">
                       <option value="goods">Goods</option>
                       <option value="infrastructure">Infrastructure</option>
@@ -259,7 +259,7 @@ const BiddingPage = () => {
                   </div>
                   <div>
                     <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Status</label>
-                    <select value={form.status} onChange={e => setForm({ ...form, status: e.target.value as any })}
+                    <select value={form.status} onChange={e => setForm({ ...form, status: e.target.value as 'identified' | 'preparing' | 'submitted' | 'under_evaluation' | 'awarded' | 'lost' })}
                       className="w-full px-3 py-2 bg-slate-50 border border-surface-border rounded-xl text-sm outline-none focus:ring-2 focus:ring-brand-blue/10">
                       <option value="identified">Identified</option>
                       <option value="preparing">Preparing</option>

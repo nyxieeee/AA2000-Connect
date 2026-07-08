@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { BarChart3, Download, TrendingUp, Users, Target, Activity, FileText } from 'lucide-react';
+import { Download, TrendingUp, Users, Target, Activity, FileText } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { AnimatedPage } from '../../components/ui/AnimatedPage';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const CHART_DATA: Record<string, any[]> = {
   'team-performance': [
     { name: 'Anna', leads: 45, deals: 12 }, { name: 'Ben', leads: 38, deals: 9 }, { name: 'Carla', leads: 52, deals: 15 }, { name: 'Dennis', leads: 29, deals: 7 },

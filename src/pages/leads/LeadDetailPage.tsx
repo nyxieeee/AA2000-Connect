@@ -110,7 +110,7 @@ export default function LeadDetailPage() {
               {['name', 'email', 'phone', 'company'].map(f => (
                 <div key={f}>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">{f}</label>
-                  <input value={(form as any)[f] || ''} onChange={e => setForm({ ...form, [f]: e.target.value })}
+                  <input value={(form as unknown as Record<string, string>)[f] || ''} onChange={e => setForm({ ...form, [f]: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-surface-border rounded-xl text-xs outline-none" />
                 </div>
               ))}

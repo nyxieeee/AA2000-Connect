@@ -10,4 +10,5 @@
 //
 // export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const supabase = null as any;

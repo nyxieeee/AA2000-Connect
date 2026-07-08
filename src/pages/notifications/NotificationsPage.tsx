@@ -3,6 +3,7 @@ import { cn } from '../../utils/cn';
 import { useNotificationsStore } from '../../stores/modules/notificationsStore';
 import { AnimatedPage, AnimatedList } from '../../components/ui/AnimatedPage';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const ICON_MAP: Record<string, any> = {
   email_opened: MailOpen,
   link_clicked: TrendingUp,

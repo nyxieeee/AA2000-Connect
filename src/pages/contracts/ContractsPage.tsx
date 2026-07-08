@@ -75,7 +75,7 @@ export default function ContractsPage() {
         <div className="glass-card p-5 space-y-3">
           <div className="grid grid-cols-3 gap-3">
             <input value={form.contractNumber} onChange={e => setForm(p => ({ ...p, contractNumber: e.target.value }))} placeholder="Contract # *" className="px-4 py-2 bg-slate-50 border border-surface-border rounded-xl text-sm outline-none" />
-            <select value={form.type} onChange={e => setForm(p => ({ ...p, type: e.target.value as any }))} className="px-4 py-2 bg-slate-50 border border-surface-border rounded-xl text-sm outline-none">
+            <select value={form.type} onChange={e => setForm(p => ({ ...p, type: e.target.value as 'service' | 'product' | 'lease' }))} className="px-4 py-2 bg-slate-50 border border-surface-border rounded-xl text-sm outline-none">
               <option value="service">Service</option><option value="product">Product</option><option value="lease">Lease</option>
             </select>
             <input value={form.value} onChange={e => setForm(p => ({ ...p, value: parseInt(e.target.value) || 0 }))} type="number" placeholder="Value (₱)" className="px-4 py-2 bg-slate-50 border border-surface-border rounded-xl text-sm outline-none" />
@@ -105,7 +105,7 @@ export default function ContractsPage() {
               <p className="text-xs text-slate-500">{c.type} · ₱{c.value.toLocaleString()} · {new Date(c.startDate).toLocaleDateString()} – {new Date(c.endDate).toLocaleDateString()}</p>
             </div>
             <div className="flex items-center gap-3">
-              <select value={c.status} onChange={e => updateContract(c.id, { status: e.target.value as any })} className="px-2 py-1 text-[10px] bg-slate-50 border border-surface-border rounded-lg outline-none">
+              <select value={c.status} onChange={e => updateContract(c.id, { status: e.target.value as 'draft' | 'active' | 'expiring' | 'expired' | 'terminated' })} className="px-2 py-1 text-[10px] bg-slate-50 border border-surface-border rounded-lg outline-none">
                 {['draft', 'active', 'expiring', 'expired', 'terminated'].map(s => <option key={s} value={s}>{s}</option>)}
               </select>
               <button onClick={() => deleteContract(c.id)} className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded transition-all"><Trash2 size={14} /></button>

@@ -179,7 +179,7 @@ const DashboardPage = () => {
                   <YAxis hide />
                   <Tooltip 
                     contentStyle={{ borderRadius: '24px', border: 'none', boxShadow: '0 20px 40px -5px rgba(0,0,0,0.1)', fontSize: '11px', fontWeight: '900', textTransform: 'uppercase' }}
-                    formatter={(val: any) => formatCurrency(Number(val))}
+                    formatter={(val: number) => formatCurrency(Number(val))}
                   />
                   <Area type="monotone" dataKey="value" stroke="#1E40AF" strokeWidth={4} fillOpacity={1} fill="url(#colorValue)" />
                 </AreaChart>

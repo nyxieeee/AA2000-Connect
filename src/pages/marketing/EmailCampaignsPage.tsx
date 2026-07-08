@@ -66,6 +66,7 @@ const EmailCampaignsPage = () => {
           {['Templates', 'Campaigns', 'Analytics'].map(view => (
             <button 
               key={view}
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               onClick={() => setActiveView(view as any)}
               className={cn(
                 "px-5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all",

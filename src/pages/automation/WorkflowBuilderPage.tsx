@@ -23,6 +23,7 @@ import { usePipelinesStore } from '../../stores/modules/pipelinesStore';
 type WorkflowNodeData = { label: string; type?: string; iconType?: string; description?: string; [key: string]: unknown; };
 type AppNode = Node<WorkflowNodeData>;
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const nodeTypes: NodeTypes = { workflowNode: WorkflowNode as any, triggerNode: TriggerNode as any, conditionNode: ConditionNode as any };
 
 const makeInitialNodes = (): AppNode[] => [

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Wrench, Calendar, AlertTriangle, CheckCircle2, Clock, User, Shield, Filter, Plus } from 'lucide-react';
+import { Wrench, Calendar, AlertTriangle, CheckCircle2, Clock, User, Shield, Plus } from 'lucide-react';
 import { AnimatedPage } from '../../components/ui/AnimatedPage';
 import { useServiceManagementStore, type TicketStatus } from '../../stores/modules/serviceManagementStore';
 

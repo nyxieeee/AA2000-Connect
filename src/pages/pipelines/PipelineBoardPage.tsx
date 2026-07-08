@@ -578,6 +578,7 @@ const PipelineBoardPage = () => {
                         <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Status</label>
                         <select 
                           value={newDeal.status}
+                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
                           onChange={(e) => setNewDeal({...newDeal, status: e.target.value as any})}
                           className="w-full px-4 py-2.5 bg-slate-50 border border-surface-border rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-brand-blue/10 focus:border-brand-blue transition-all"
                         >

@@ -25,7 +25,9 @@ export interface Workflow {
   activeEnrolled: number;
   createdAt: string;
   updatedAt: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   nodes?: any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   edges?: any[];
 }
 
@@ -205,6 +207,7 @@ export const useAutomationStore = create<AutomationStore>((set, get) => ({
   },
 
   cloneFromTemplate: (templateId) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const templates = storage.get<any[]>('workflow_templates') || [];
     const template = templates.find(t => t.id === templateId);
     if (!template) return null;
