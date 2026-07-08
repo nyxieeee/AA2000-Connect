@@ -148,8 +148,7 @@ const AIAgentsPage = () => {
       </div>
 
       {/* Agents Listing and details layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-6">
+      <div className="max-w-4xl space-y-6">
           {filteredAgents.map((agent, index) => {
             const IconComp = CATEGORY_ICONS[agent.category] || Brain;
             const catColors = CATEGORY_COLORS[agent.category] || '';
@@ -262,45 +261,6 @@ const AIAgentsPage = () => {
             <h4 className="text-xs font-bold uppercase tracking-wider">Deploy New AI Agent</h4>
             <p className="text-[10px] text-slate-400 mt-0.5">Initialize a custom autonomous assistant for this category</p>
           </motion.div>
-        </div>
-
-        {/* Right Info Sidebar */}
-        <div className="space-y-6">
-          <div className="glass-card bg-navy-900 text-white border-none relative overflow-hidden group">
-            <div className="absolute bottom-0 right-0 w-48 h-48 bg-brand-blue/10 blur-[80px] rounded-full -mr-24 -mb-24 group-hover:bg-brand-blue/20 transition-all"></div>
-            <div className="relative z-10">
-              <h3 className="text-sm font-semibold uppercase tracking-[0.2em] mb-8 flex items-center gap-3">
-                <Database size={18} className="text-brand-blue" />
-                Network Node Link
-              </h3>
-              <div className="space-y-6">
-                <div className="p-4 bg-white/5 rounded-[1.25rem] border border-white/10 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
-                    <span className="text-[10px] font-semibold uppercase tracking-wider">Central Node: Connected</span>
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  <div className="space-y-1">
-                    <label className="text-[8px] font-semibold text-slate-500 uppercase tracking-widest block">Core Gateway URL</label>
-                    <div className="flex items-center gap-2.5 p-3.5 bg-white/5 rounded-xl border border-white/10 font-mono text-[9px] text-slate-100">
-                      <Zap size={12} className="text-brand-blue animate-pulse" />
-                      <span>192.168.1.100:8080/v1</span>
-                    </div>
-                  </div>
-                  <div className="space-y-1.5 pt-2">
-                    <label className="text-[8px] font-semibold text-slate-500 uppercase tracking-widest block">Synced Tables</label>
-                    <div className="flex flex-wrap gap-1.5">
-                      {['Inventory', 'BOMs', 'Product Catalog', 'Audit Trails'].map(db => (
-                        <span key={db} className="px-2.5 py-1 bg-white/5 border border-white/10 rounded-lg text-[8px] font-bold text-slate-300 uppercase tracking-wider hover:border-brand-blue/30 transition-all cursor-default">{db}</span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Deploy Agent Modal */}
