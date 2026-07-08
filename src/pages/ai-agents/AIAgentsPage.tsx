@@ -283,8 +283,8 @@ const AIAgentsPage = () => {
                 <div className="space-y-3">
                   <div className="space-y-1">
                     <label className="text-[8px] font-semibold text-slate-500 uppercase tracking-widest block">Core Gateway URL</label>
-                    <div className="flex items-center gap-2.5 p-3.5 bg-white/5 rounded-xl border border-white/10 font-mono text-[9px] text-brand-blue">
-                      <Zap size={12} />
+                    <div className="flex items-center gap-2.5 p-3.5 bg-white/5 rounded-xl border border-white/10 font-mono text-[9px] text-slate-100">
+                      <Zap size={12} className="text-brand-blue animate-pulse" />
                       <span>192.168.1.100:8080/v1</span>
                     </div>
                   </div>

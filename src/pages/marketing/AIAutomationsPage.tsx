@@ -197,7 +197,7 @@ const AIAutomationsPage = () => {
                     </div>
                     <div>
                        <h3 className="text-xs font-black uppercase tracking-widest">Performance Pulse</h3>
-                       <p className="text-[9px] text-brand-blue font-bold uppercase tracking-widest">AI Efficiency Hub</p>
+                       <p className="text-[9px] text-slate-300 font-bold uppercase tracking-widest">AI Efficiency Hub</p>
                     </div>
                  </div>
                  
@@ -214,7 +214,7 @@ const AIAutomationsPage = () => {
                     <div className="p-4 bg-white/5 rounded-2xl border border-white/10">
                        <div className="flex items-center justify-between mb-2">
                           <span className="text-[10px] font-bold text-slate-400 uppercase">Campaign Accuracy</span>
-                          <span className="text-brand-blue text-xs font-black">94.5%</span>
+                          <span className="text-slate-100 text-xs font-black">94.5%</span>
                        </div>
                        <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
                           <div className="h-full bg-brand-blue w-[94%]"></div>

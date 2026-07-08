@@ -236,7 +236,7 @@ const SocialPlannerPage = () => {
                   <div className="grid grid-cols-2 gap-4">
                      <div className="space-y-1">
                         <p className="sub-title mb-0 opacity-60">Total Reach</p>
-                        <h4 className="text-xl font-semibold uppercase">24.8K</h4>
+                        <h4 className="text-xl font-semibold uppercase text-white">24.8K</h4>
                         <div className="flex items-center gap-1 text-[8px] text-emerald-400 font-semibold">
                            <ChevronRight size={10} className="-rotate-90" />
                            <span>+12% vs LW</span>
@@ -244,7 +244,7 @@ const SocialPlannerPage = () => {
                      </div>
                      <div className="space-y-1">
                         <p className="sub-title mb-0 opacity-60">Engagement</p>
-                        <h4 className="text-xl font-semibold uppercase">4.2%</h4>
+                        <h4 className="text-xl font-semibold uppercase text-white">4.2%</h4>
                         <div className="flex items-center gap-1 text-[8px] text-emerald-400 font-semibold">
                            <ChevronRight size={10} className="-rotate-90" />
                            <span>+5.1% vs LW</span>
@@ -254,7 +254,7 @@ const SocialPlannerPage = () => {
                   <div className="pt-4 border-t border-white/10">
                      <button 
                       onClick={() => setActiveTab('Analytics')}
-                      className="w-full text-center text-[10px] font-semibold uppercase tracking-widest text-brand-blue hover:text-brand-light transition-all"
+                      className="w-full text-center text-[10px] font-semibold uppercase tracking-widest text-slate-200 hover:text-white transition-all"
                      >
                        Detailed Insights
                      </button>
