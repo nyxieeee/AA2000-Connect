@@ -7,7 +7,6 @@ import {
   Megaphone,
   Zap,
   Bot,
-  BarChart3,
   Building2,
   ListChecks,
   FileText,
@@ -16,7 +15,6 @@ import {
   Bell,
   FileInput,
   ClipboardList,
-  BarChart4,
   Search,
   UserPlus,
   GitBranch,
@@ -29,23 +27,66 @@ import {
   Settings,
   Shield,
   ChevronLeft,
-  ChevronRight,
+  DollarSign,
+  ClipboardCheck,
+  Calculator,
+  Crown,
+  Gauge,
+  BookOpen,
+  HelpCircle,
+  FileBarChart,
+  Gavel,
+  Globe,
+  Wrench,
+  Library,
+  Store,
+  Brain,
+  Package,
 } from 'lucide-react';
-import { NavLink } from 'react-router-dom';
-import { useSidebarStore } from '../../stores/sidebarStore';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { useAuthStore, type UserRole } from '../../stores/authStore';
 import { cn } from '../../utils/cn';
 
-const navGroups = [
+interface NavItem {
+  icon: React.ComponentType<any>;
+  label: string;
+  path: string;
+  roles?: UserRole[]; // If set, only these roles can see this item. If unset, visible to all.
+}
+
+interface NavGroup {
+  label: string;
+  roles?: UserRole[]; // If set, entire group hidden unless user has one of these roles
+  items: NavItem[];
+}
+
+const ADMIN_ROLES: UserRole[] = ['super_admin', 'admin'];
+const MANAGER_PLUS: UserRole[] = ['super_admin', 'admin', 'sales_manager', 'team_leader', 'ceo'];
+const SALES_ALL: UserRole[] = ['super_admin', 'admin', 'sales_manager', 'sales_rep', 'team_leader', 'ceo'];
+const FINANCE_ROLES: UserRole[] = ['super_admin', 'admin', 'finance'];
+const EXEC_ROLES: UserRole[] = ['super_admin', 'admin', 'ceo'];
+
+const navGroups: NavGroup[] = [
   {
     label: 'Sales',
     items: [
       { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
       { icon: Users, label: 'Contacts', path: '/contacts' },
       { icon: Building2, label: 'Accounts', path: '/companies' },
-      { icon: ClipboardList, label: 'PMS & CMS', path: '/requests' },
+      { icon: Wrench, label: 'PMS & CMS', path: '/service-management' },
       { icon: FolderKanban, label: 'Projects', path: '/projects' },
       { icon: Target, label: 'Pipeline', path: '/pipeline' },
       { icon: MessageSquare, label: 'Inbox', path: '/inbox' },
+    ],
+  },
+  {
+    label: 'Incentives',
+    roles: SALES_ALL,
+    items: [
+      { icon: DollarSign, label: 'Incentive Requests', path: '/incentives' },
+      { icon: ClipboardCheck, label: 'GM Approvals', path: '/incentives/approvals', roles: MANAGER_PLUS },
+      { icon: Calculator, label: 'Finance Review', path: '/incentives/finance', roles: FINANCE_ROLES },
+      { icon: Crown, label: 'Executive Review', path: '/incentives/executive', roles: EXEC_ROLES },
     ],
   },
   {
@@ -54,13 +95,14 @@ const navGroups = [
       { icon: Megaphone, label: 'Marketing', path: '/marketing/social-planner' },
       { icon: Zap, label: 'Automation', path: '/workflows' },
       { icon: Bot, label: 'AI Agents', path: '/ai-agents' },
+      { icon: Store, label: 'FB Marketplace', path: '/marketplace', roles: [...MANAGER_PLUS, 'sales_rep'] },
     ],
   },
   {
     label: 'Lead Management',
     items: [
       { icon: UserPlus, label: 'Lead Capture', path: '/leads' },
-      { icon: GitBranch, label: 'Lead Assignment', path: '/lead-assignment' },
+      { icon: GitBranch, label: 'Lead Assignment', path: '/lead-assignment', roles: MANAGER_PLUS },
       { icon: Search, label: 'Company Research', path: '/company-research' },
     ],
   },
@@ -85,107 +127,134 @@ const navGroups = [
     ],
   },
   {
+    label: 'Intelligence',
+    roles: MANAGER_PLUS,
+    items: [
+      { icon: Gauge, label: 'KPI Monitor', path: '/kpi' },
+      { icon: FileBarChart, label: 'Reports', path: '/reports' },
+      { icon: Globe, label: 'SEO / GEO', path: '/seo-geo', roles: ADMIN_ROLES },
+      { icon: Brain, label: 'Business Intel', path: '/business-intelligence', roles: EXEC_ROLES },
+      { icon: Bot, label: 'Ato (AI)', path: '/ai-knowledge' },
+    ],
+  },
+  {
+    label: 'Resources',
+    items: [
+      { icon: Gavel, label: 'Bidding / PhilGEPS', path: '/bidding', roles: MANAGER_PLUS },
+      { icon: BookOpen, label: 'Policy Center', path: '/policy-center' },
+      { icon: Library, label: 'Knowledge Base', path: '/knowledge-base' },
+      { icon: HelpCircle, label: 'Help Center', path: '/help' },
+      { icon: Globe, label: 'Website', path: '/website', roles: ADMIN_ROLES },
+    ],
+  },
+  {
+    label: 'Catalog',
+    items: [
+      { icon: Package, label: 'Product Search', path: '/product-search' },
+    ],
+  },
+  {
     label: 'Admin',
     items: [
-      { icon: Shield, label: 'Admin Panel', path: '/admin' },
-      { icon: BarChart3, label: 'Sales Reports', path: '/analytics' },
-      { icon: BarChart4, label: 'Admin Reports', path: '/admin-analytics' },
-      { icon: FileSignature, label: 'Contracts', path: '/contracts' },
-      { icon: Clock, label: 'Response Times', path: '/sla' },
-      { icon: ClipboardList, label: 'Activity History', path: '/audit-logs' },
+      { icon: Shield, label: 'Admin Panel', path: '/admin', roles: ADMIN_ROLES },
+      { icon: FileSignature, label: 'Contracts', path: '/contracts', roles: ['super_admin', 'admin', 'ceo', 'team_leader'] },
+      { icon: Clock, label: 'Response Times', path: '/sla', roles: ['super_admin', 'admin', 'ceo', 'team_leader'] },
+      { icon: ClipboardList, label: 'Activity History', path: '/audit-logs', roles: ADMIN_ROLES },
     ],
   },
 ];
 
 export const Sidebar: React.FC = () => {
-  const { collapsed, toggle } = useSidebarStore();
+  const user = useAuthStore((s) => s.user);
+  const logout = useAuthStore((s) => s.logout);
+  const navigate = useNavigate();
+  const userRole = user?.role || 'sales_rep';
+
+  const isVisible = (roles?: UserRole[]) => !roles || roles.includes(userRole);
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   return (
-    <aside
-      className={cn(
-        "fixed left-0 top-0 h-full bg-white border-r border-surface-border transition-all duration-300 z-50 flex flex-col shadow-sm",
-        collapsed ? "w-20" : "w-64"
-      )}
-    >
+    <aside className="fixed left-0 top-0 h-full bg-white border-r border-surface-border w-64 z-50 flex flex-col shadow-sm">
       {/* Logo */}
       <div className="h-24 flex flex-col justify-center px-8 border-b border-surface-border mb-2">
         <div className="flex items-center gap-4 group cursor-pointer">
           <div className="w-11 h-11 bg-gradient-to-br from-brand-blue to-navy-900 rounded-xl flex items-center justify-center text-white shadow-lg shadow-brand-blue/10 group-hover:scale-105 transition-transform duration-500">
              <span className="font-semibold text-xl tracking-tighter">A</span>
           </div>
-          {!collapsed && (
-            <div className="fade-in flex flex-col">
-              <span className="text-xl font-semibold text-navy-900 tracking-[-0.05em] leading-none">AA2000</span>
-              <span className="text-[10px] font-light text-slate-400 uppercase tracking-[0.4em] mt-1.5 leading-tight">Connect</span>
-            </div>
-          )}
+          <div className="fade-in flex flex-col">
+            <span className="text-xl font-semibold text-navy-900 tracking-[-0.05em] leading-none">AA2000</span>
+            <span className="text-[10px] font-light text-slate-400 uppercase tracking-[0.4em] mt-1.5 leading-tight">Connect</span>
+          </div>
         </div>
       </div>
 
       {/* Navigation */}
       <nav className="flex-1 px-3 overflow-y-auto custom-scrollbar">
-        {navGroups.map((group, gi) => (
-          <div key={gi} className="py-1">
-            {!collapsed && gi > 0 && <div className="px-2 pt-3 pb-0.5"><div className="h-px bg-surface-border" /></div>}
-            {!collapsed && (
+        {navGroups.map((group, gi) => {
+          if (!isVisible(group.roles)) return null;
+          const visibleItems = group.items.filter((item) => isVisible(item.roles));
+          if (visibleItems.length === 0) return null;
+
+          return (
+            <div key={gi} className="py-1">
+              {gi > 0 && <div className="px-2 pt-3 pb-0.5"><div className="h-px bg-surface-border" /></div>}
               <div className="px-4 pt-3 pb-0.5">
                 <span className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.25em]">{group.label}</span>
               </div>
-            )}
-            {group.items.map((item) => (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                className={({ isActive }) => cn(
-                  "flex items-center gap-3 px-4 py-2 rounded-xl transition-all duration-200 group",
-                  isActive
-                    ? "bg-brand-blue/10 text-brand-blue font-semibold"
-                    : "text-slate-500 hover:text-navy-900 hover:bg-slate-50",
-                  collapsed && "justify-center px-0"
-                )}
-              >
-                <item.icon size={18} className="shrink-0" />
-                {!collapsed && <span className="text-sm">{item.label}</span>}
-                {collapsed && (
-                  <div className="absolute left-full ml-3 px-2 py-1 bg-navy-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 shadow-lg">
-                    {item.label}
-                  </div>
-                )}
-              </NavLink>
-            ))}
-          </div>
-        ))}
+              {visibleItems.map((item) => (
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  end
+                  className={({ isActive }) => cn(
+                    "flex items-center gap-3 px-4 py-2 rounded-xl transition-all duration-200 group",
+                    isActive
+                      ? "bg-brand-blue/10 text-brand-blue font-semibold"
+                      : "text-slate-500 hover:text-navy-900 hover:bg-slate-50"
+                  )}
+                >
+                  <item.icon size={18} className="shrink-0" />
+                  <span className="text-sm">{item.label}</span>
+                </NavLink>
+              ))}
+            </div>
+          );
+        })}
       </nav>
 
       {/* Footer */}
       <div className="p-3 border-t border-surface-border space-y-1">
+        {/* User info */}
+        {user && (
+          <div className="px-4 py-2 mb-1">
+            <p className="text-xs font-bold text-navy-900 truncate">{user.name}</p>
+            <p className="text-[9px] text-slate-400 uppercase tracking-wider">{user.role.replace('_', ' ')}</p>
+          </div>
+        )}
+
         <NavLink
           to="/settings"
           className={({ isActive }) => cn(
             "flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200",
             isActive
               ? "bg-brand-blue/10 text-brand-blue font-semibold"
-              : "text-slate-500 hover:text-navy-900 hover:bg-slate-50",
-            collapsed && "justify-center px-0"
+              : "text-slate-500 hover:text-navy-900 hover:bg-slate-50"
           )}
         >
           <Settings size={18} className="shrink-0" />
-          {!collapsed && <span className="text-sm">Settings</span>}
+          <span className="text-sm">Settings</span>
         </NavLink>
 
         <button
-          onClick={toggle}
-          className={cn(
-            "flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 w-full text-slate-500 hover:text-navy-900 hover:bg-slate-50",
-            collapsed && "justify-center px-0"
-          )}
+          onClick={handleLogout}
+          className="flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 w-full text-rose-500 hover:text-rose-600 hover:bg-rose-50"
         >
-          {collapsed ? <ChevronRight size={18} /> : (
-            <>
-              <ChevronLeft size={18} className="shrink-0" />
-              <span className="text-sm">Collapse</span>
-            </>
-          )}
+          <ChevronLeft size={18} className="shrink-0" />
+          <span className="text-sm">Logout</span>
         </button>
       </div>
     </aside>

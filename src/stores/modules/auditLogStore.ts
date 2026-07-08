@@ -8,13 +8,17 @@ export interface AuditLogItem {
   action: string;
   tableName: string;
   recordId: string;
+  previousValue?: string;
+  newValue?: string;
   changes?: string;
+  ipAddress: string;
   occurredAt: string;
 }
 
 interface AuditLogStore {
   logs: AuditLogItem[];
   addLog: (log: Omit<AuditLogItem, 'id' | 'occurredAt'>) => void;
+  // Archive-only: no hard delete
 }
 
 export const useAuditLogStore = create<AuditLogStore>((set, get) => ({

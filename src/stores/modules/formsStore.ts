@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { storage } from '../../services/storage';
+import { useLeadsStore } from './leadsStore';
 
 export interface FormDef {
   id: string;
@@ -42,7 +43,32 @@ export const useFormsStore = create<FormsStore>((set, get) => ({
   addSubmission: (formId, data) => {
     const sub: FormSub = { id: `sub-${Date.now()}`, formId, data, createdAt: new Date().toISOString() };
     const updated = [...get().submissions, sub];
-    storage.set('module_form_submissions', updated); set({ submissions: updated });
+    storage.set('module_form_submissions', updated); 
+    set({ submissions: updated });
+
+    // Auto-create detailed CRM Lead!
+    const formDef = get().forms.find(f => f.id === formId);
+    const formName = formDef ? formDef.name : 'Unknown Web Form';
+
+    const leadName = data.full_name || data.name || data.fullName || 'Web Form Submission';
+    const email = data.email || data.emailAddress || 'no-email@webform.com';
+    const phone = data.phone || data.phoneNumber || data.tel || '';
+    const company = data.company || data.companyName || '';
+    
+    let notes = `[AUTO GENERATED LEAD FROM WEB FORM]\nForm Name: "${formName}"\n\n`;
+    Object.entries(data).forEach(([key, val]) => {
+      notes += `${key.toUpperCase().replace('_', ' ')}: ${val}\n`;
+    });
+
+    useLeadsStore.getState().addLead({
+      name: leadName,
+      email,
+      phone,
+      company,
+      source: 'website',
+      status: 'new',
+      notes: notes.trim(),
+    });
   },
   deleteForm: (id) => {
     const updated = get().forms.filter(f => f.id !== id);

@@ -22,8 +22,18 @@ const roleColors: Record<string, string> = {
 export default function AdminPanelPage() {
   const { user } = useAuthStore();
   const [activeTab, setActiveTab] = useState<'users' | 'branding' | 'integrations'>('users');
-  const [users, setUsers] = useState<typeof initialUsers>(() => storage.get('admin_users') || initialUsers);
-  const [branding, setBranding] = useState(() => storage.get('admin_branding') || {
+  const [users, setUsers] = useState<typeof initialUsers>(() => storage.get<typeof initialUsers>('admin_users') || initialUsers);
+  const [branding, setBranding] = useState<{
+    companyName: string;
+    tagline: string;
+    primaryColor: string;
+    secondaryColor: string;
+  }>(() => storage.get<{
+    companyName: string;
+    tagline: string;
+    primaryColor: string;
+    secondaryColor: string;
+  }>('admin_branding') || {
     companyName: 'AA2000 Security & Technology Solutions Inc.',
     tagline: 'Leading Security & Automation Solutions in the Philippines',
     primaryColor: '#6366f1',
@@ -34,13 +44,16 @@ export default function AdminPanelPage() {
   const persistBranding = (updated: typeof branding) => { setBranding(updated); storage.set('admin_branding', updated); };
 
   const integrations = [
-    { id: 'viber', label: 'Viber API', desc: 'Connect your Viber bot for support.', icon: MessageCircle, color: 'text-purple-500', fields: ['Viber Auth Token'] },
-    { id: 'whatsapp', label: 'WhatsApp Business', desc: 'Direct chat integration via Meta API.', icon: MessageSquare, color: 'text-emerald-600', fields: ['API Key', 'Phone Number ID'] },
-    { id: 'tiktok', label: 'TikTok Lead Sync', desc: 'Auto-sync leads from TikTok Ads.', icon: Video, color: 'text-rose-600', fields: ['App ID', 'Secret Key'] },
-    { id: 'sms', label: 'SMS Gateway', desc: 'Send automated text notifications.', icon: Smartphone, color: 'text-brand-blue', fields: ['API Key', 'Sender ID'] },
-    { id: 'meta', label: 'Facebook & Instagram', desc: 'Sync inquiries from FB & IG.', icon: Layout, color: 'text-blue-600', fields: ['Page Access Token', 'App Secret'] },
-    { id: 'website', label: 'Website Live Chat', desc: 'Install widget on your site.', icon: Globe, color: 'text-emerald-500', fields: ['Site API Key'] },
-    { id: 'email', label: 'Email (SMTP/GHL)', desc: 'Setup professional email sending.', icon: Cloud, color: 'text-brand-blue', fields: ['SMTP Host', 'SMTP User', 'SMTP Password'] },
+    { id: 'gemini', label: 'Gemini AI API', desc: 'Powers Google Search grounding and AI chat.', icon: Shield, color: 'text-violet-600', envVar: 'VITE_GEMINI_API_KEY', isConfigured: !!import.meta.env.VITE_GEMINI_API_KEY },
+    { id: 'groq', label: 'Groq Cloud API', desc: 'Powers high-speed Llama, GPT OSS, & Qwen agents.', icon: Shield, color: 'text-orange-500', envVar: 'VITE_GROQ_API_KEY', isConfigured: !!import.meta.env.VITE_GROQ_API_KEY },
+    { id: 'mistral', label: 'Mistral Developer API', desc: 'Powers open-source Mistral Nemo agent logic.', icon: Shield, color: 'text-red-500', envVar: 'VITE_MISTRAL_API_KEY', isConfigured: !!import.meta.env.VITE_MISTRAL_API_KEY },
+    { id: 'viber', label: 'Viber API', desc: 'Connect your Viber bot for support.', icon: MessageCircle, color: 'text-purple-500', envVar: 'VITE_VIBER_TOKEN', isConfigured: !!import.meta.env.VITE_VIBER_TOKEN },
+    { id: 'whatsapp', label: 'WhatsApp Business', desc: 'Direct chat integration via Meta API.', icon: MessageSquare, color: 'text-emerald-600', envVar: 'VITE_WHATSAPP_TOKEN', isConfigured: !!import.meta.env.VITE_WHATSAPP_TOKEN },
+    { id: 'tiktok', label: 'TikTok Lead Sync', desc: 'Auto-sync leads from TikTok Ads.', icon: Video, color: 'text-rose-600', envVar: 'VITE_TIKTOK_SECRET', isConfigured: !!import.meta.env.VITE_TIKTOK_SECRET },
+    { id: 'sms', label: 'SMS Gateway', desc: 'Send automated text notifications.', icon: Smartphone, color: 'text-brand-blue', envVar: 'VITE_SMS_GATEWAY_KEY', isConfigured: !!import.meta.env.VITE_SMS_GATEWAY_KEY },
+    { id: 'meta', label: 'Facebook & Instagram', desc: 'Sync inquiries from FB & IG.', icon: Layout, color: 'text-blue-600', envVar: 'VITE_META_ACCESS_TOKEN', isConfigured: !!import.meta.env.VITE_META_ACCESS_TOKEN },
+    { id: 'website', label: 'Website Live Chat', desc: 'Install widget on your site.', icon: Globe, color: 'text-emerald-500', envVar: 'VITE_WEBSITE_API_KEY', isConfigured: !!import.meta.env.VITE_WEBSITE_API_KEY },
+    { id: 'email', label: 'Email (SMTP/GHL)', desc: 'Setup professional email sending.', icon: Cloud, color: 'text-brand-blue', envVar: 'VITE_SMTP_PASSWORD', isConfigured: !!import.meta.env.VITE_SMTP_PASSWORD },
   ];
 
   const [showUserForm, setShowUserForm] = useState(false);
@@ -222,14 +235,21 @@ export default function AdminPanelPage() {
                   <div className={cn("p-4 rounded-2xl bg-slate-50 group-hover:bg-brand-blue/5 transition-colors shadow-sm", item.color)}>
                     <item.icon size={24} />
                   </div>
-                  <span className="px-3 py-1 bg-slate-100 text-slate-400 rounded-full text-[8px] font-semibold uppercase tracking-widest border border-slate-200">Disconnected</span>
+                  <span className={cn("px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border", 
+                    item.isConfigured 
+                      ? "bg-emerald-50 text-emerald-600 border-emerald-200" 
+                      : "bg-slate-100 text-slate-400 border-slate-200"
+                  )}>
+                    {item.isConfigured ? 'Active' : 'Unconfigured'}
+                  </span>
                 </div>
                 <h3 className="text-sm font-semibold text-navy-900 mb-1 uppercase tracking-widest">{item.label}</h3>
-                <p className="text-[11px] text-slate-400 font-medium leading-relaxed mb-6">{item.desc}</p>
+                <p className="text-[11px] text-slate-400 font-medium leading-relaxed mb-4">{item.desc}</p>
               </div>
-              <button onClick={() => alert(`Opening configuration for ${item.label}...`)} className="w-full py-3 bg-brand-blue text-white rounded-2xl font-semibold uppercase tracking-widest text-[10px] hover:bg-brand-light transition-all flex items-center justify-center gap-2 shadow-xl shadow-brand-blue/20">
-                <Key size={14} /> Configure
-              </button>
+              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400 font-mono">
+                <span>Key: {item.envVar}</span>
+                <span className="font-semibold text-navy-900 uppercase text-[8px]">🔐 IT Configured</span>
+              </div>
             </div>
           ))}
         </div>

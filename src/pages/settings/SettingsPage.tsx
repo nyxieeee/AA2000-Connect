@@ -54,6 +54,11 @@ const SettingsPage = () => {
     { id: 'email', label: 'Email (SMTP/GHL)', desc: 'Setup professional email sending.', icon: Cloud, color: 'text-brand-blue', fields: ['SMTP Host', 'SMTP User', 'SMTP Password'] }
   ];
 
+  const isAdmin = user?.role === 'super_admin' || user?.role === 'admin';
+  const tabs = isAdmin 
+    ? ['Profile', 'Branding', 'Integrations', 'Notifications'] 
+    : ['Profile', 'Notifications'];
+
   return (
     <AnimatedPage className="space-y-6 pb-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -68,7 +73,7 @@ const SettingsPage = () => {
       </div>
 
       <div className="flex bg-slate-100 p-1 rounded-2xl border border-surface-border shadow-inner w-fit">
-        {['Profile', 'Branding', 'Integrations', 'Notifications'].map(tab => (
+        {tabs.map(tab => (
           <button 
             key={tab}
             onClick={() => setActiveTab(tab as any)}
@@ -127,7 +132,7 @@ const SettingsPage = () => {
         </div>
       )}
 
-      {activeTab === 'Branding' && (
+      {activeTab === 'Branding' && isAdmin && (
         <div className="max-w-4xl space-y-6">
            <div className="glass-card space-y-8">
               <div className="flex items-center gap-4 border-b border-slate-50 pb-6">
@@ -197,7 +202,7 @@ const SettingsPage = () => {
         </div>
       )}
 
-      {activeTab === 'Integrations' && (
+      {activeTab === 'Integrations' && isAdmin && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {integrations.map((item) => (
             <div key={item.id} className="glass-card flex flex-col justify-between hover:border-brand-blue/30 group">

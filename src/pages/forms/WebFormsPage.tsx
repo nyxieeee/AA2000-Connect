@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, FileText, Eye, Trash2, Code, ExternalLink, ListChecks, Edit } from 'lucide-react';
+import { Plus, FileText, Eye, Trash2, Code, ExternalLink, ListChecks, Edit, Sparkles } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { useFormsStore } from '../../stores/modules/formsStore';
 import { AnimatedPage } from '../../components/ui/AnimatedPage';
@@ -113,7 +113,10 @@ export default function WebFormsPage() {
             <div key={sub.id} className="glass-card p-4 group">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-xs text-slate-500 font-medium">{sub.createdAt}</p>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2.5">
+                  <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded text-[8px] font-bold uppercase tracking-wider flex items-center gap-1 shadow-sm">
+                    <Sparkles size={10} className="text-emerald-600 animate-pulse" /> Lead Auto-Created
+                  </span>
                   <span className="text-[10px] text-slate-400">Form: {forms.find(f => f.id === sub.formId)?.name || 'Unknown'}</span>
                   <button onClick={() => deleteSubmission(sub.id)} className="p-1 text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={12} /></button>
                 </div>

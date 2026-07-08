@@ -1,5 +1,13 @@
 -- ============================================================
--- AA2000 Connect — Full Database Schema (Master Blueprint v4)
+-- AA2000 Connect — Full Database Schema
+-- ============================================================
+-- 44 tables: core data model, contacts & companies, leads,
+-- company research, pipeline, activities, BPM, approvals,
+-- documents, web forms, internal chat, email, notifications,
+-- tasks & notes, workflows & sequences, maintenance contracts,
+-- meetings, chatbot, SLA, AI recommendations, roles, audit logs,
+-- data privacy, migration log, saved reports, app requests,
+-- projects
 -- ============================================================
 
 -- 0. Extensions
@@ -329,7 +337,62 @@ create table sequence_enrollments (
 );
 
 -- ============================================================
--- 16. CONTRACTS & MAINTENANCE
+-- 16. APP REQUESTS (Service Tickets)
+-- ============================================================
+
+create table app_requests (
+  id uuid primary key default gen_random_uuid(),
+  request_number text not null,
+  type text,
+  priority text default 'medium',
+  status text default 'new',
+  subject text not null,
+  description text,
+  contact_id uuid references contacts(id) on delete set null,
+  company_id uuid references companies(id) on delete set null,
+  company_name text,
+  assigned_to uuid,
+  source text default 'manual',
+  sla_due_at timestamptz,
+  sla_breached boolean default false,
+  resolved_at timestamptz,
+  created_at timestamptz default now()
+);
+
+-- ============================================================
+-- 17. PROJECTS & PROJECT TASKS
+-- ============================================================
+
+create table projects (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  description text,
+  status text default 'planning',
+  deal_id uuid,
+  contact_id uuid references contacts(id) on delete set null,
+  company_id uuid references companies(id) on delete set null,
+  company_name text,
+  start_date date,
+  end_date date,
+  team_members jsonb default '[]',
+  created_at timestamptz default now()
+);
+
+create table project_tasks (
+  id uuid primary key default gen_random_uuid(),
+  project_id uuid references projects(id) on delete cascade,
+  title text not null,
+  description text,
+  status text default 'todo',
+  priority text default 'medium',
+  assigned_to uuid,
+  due_date date,
+  depends_on jsonb default '[]',
+  created_at timestamptz default now()
+);
+
+-- ============================================================
+-- 18. CONTRACTS & MAINTENANCE
 -- ============================================================
 
 create table contracts (
@@ -366,7 +429,7 @@ create table maintenance_tickets (
 );
 
 -- ============================================================
--- 17. MEETINGS
+-- 19. MEETINGS
 -- ============================================================
 
 create table meetings (
@@ -380,7 +443,7 @@ create table meetings (
 );
 
 -- ============================================================
--- 18. CHATBOT
+-- 20. CHATBOT
 -- ============================================================
 
 create table chatbot_conversations (
@@ -400,7 +463,7 @@ create table chatbot_messages (
 );
 
 -- ============================================================
--- 19. SLA
+-- 21. SLA
 -- ============================================================
 
 create table sla_policies (
@@ -421,7 +484,7 @@ create table sla_tracking (
 );
 
 -- ============================================================
--- 20. AI RECOMMENDATIONS
+-- 22. AI RECOMMENDATIONS
 -- ============================================================
 
 create table ai_recommendations (
@@ -433,7 +496,7 @@ create table ai_recommendations (
 );
 
 -- ============================================================
--- 21. ROLES & PERMISSIONS
+-- 23. ROLES & PERMISSIONS
 -- ============================================================
 
 create table user_roles (
@@ -443,7 +506,7 @@ create table user_roles (
 );
 
 -- ============================================================
--- 22. AUDIT LOGS
+-- 24. AUDIT LOGS
 -- ============================================================
 
 create table audit_logs (
@@ -457,7 +520,7 @@ create table audit_logs (
 );
 
 -- ============================================================
--- 23. DATA SUBJECT REQUESTS (DPA)
+-- 25. DATA SUBJECT REQUESTS (DPA)
 -- ============================================================
 
 create table data_subject_requests (
@@ -470,7 +533,7 @@ create table data_subject_requests (
 );
 
 -- ============================================================
--- 24. MIGRATION LOG
+-- 26. MIGRATION LOG
 -- ============================================================
 
 create table migration_log (
@@ -485,7 +548,7 @@ create table migration_log (
 );
 
 -- ============================================================
--- 25. SAVED REPORTS (Admin Analytics)
+-- 27. SAVED REPORTS (Admin Analytics)
 -- ============================================================
 
 create table saved_reports (
@@ -513,6 +576,11 @@ create index idx_audit_logs_user on audit_logs(user_id);
 create index idx_audit_logs_table on audit_logs(table_name);
 create index idx_chat_messages_channel on chat_messages(channel_id);
 create index idx_form_submissions_form on form_submissions(form_id);
+create index idx_app_requests_assigned on app_requests(assigned_to);
+create index idx_app_requests_status on app_requests(status);
+create index idx_projects_status on projects(status);
+create index idx_project_tasks_project on project_tasks(project_id);
+create index idx_project_tasks_assigned on project_tasks(assigned_to);
 
 -- ============================================================
 -- ROW LEVEL SECURITY
@@ -548,4 +616,30 @@ create policy "employees see own leads" on leads
 create policy "admins can insert" on user_roles
   for insert with check (
     exists (select 1 from user_roles where user_id = auth.uid() and role = 'admin')
+  );
+
+-- App Requests
+alter table app_requests enable row level security;
+
+create policy "employees see own requests" on app_requests
+  for select using (
+    assigned_to = auth.uid()
+    or exists (select 1 from user_roles where user_id = auth.uid() and role = 'admin')
+  );
+
+-- Projects
+alter table projects enable row level security;
+
+create policy "employees see own projects" on projects
+  for select using (
+    auth.uid() = any(team_members::text[])
+    or exists (select 1 from user_roles where user_id = auth.uid() and role = 'admin')
+  );
+
+-- Project Tasks
+alter table project_tasks enable row level security;
+
+create policy "employees see own project tasks" on project_tasks
+  for select using (
+    exists (select 1 from projects where id = project_id)
   );
