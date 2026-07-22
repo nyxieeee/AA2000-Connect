@@ -11,7 +11,7 @@
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-sans font-semibold tracking-tight text-navy-900 uppercase;
+    @apply font-sans font-semibold tracking-tight text-navy-900;
   }
 }
 
@@ -113,3 +113,23 @@
 .custom-scrollbar::-webkit-scrollbar-thumb {
   @apply bg-slate-200 rounded-full;
 }
+
+/* Global Visibility: Force white text inside blue and dark blue backgrounds (excluding sidebar) */
+:not(aside) .bg-navy-900,
+:not(aside) .bg-brand-blue,
+:not(aside) .bg-blue-600,
+:not(aside) .bg-blue-700,
+:not(aside) .bg-blue-800,
+:not(aside) .bg-blue-900 {
+  color: #ffffff !important;
+}
+
+:not(aside) .bg-navy-900 h1, :not(aside) .bg-navy-900 h2, :not(aside) .bg-navy-900 h3, :not(aside) .bg-navy-900 h4, :not(aside) .bg-navy-900 h5, :not(aside) .bg-navy-900 h6,
+:not(aside) .bg-brand-blue h1, :not(aside) .bg-brand-blue h2, :not(aside) .bg-brand-blue h3, :not(aside) .bg-brand-blue h4, :not(aside) .bg-brand-blue h5, :not(aside) .bg-brand-blue h6,
+:not(aside) .bg-blue-600 h1, :not(aside) .bg-blue-600 h2, :not(aside) .bg-blue-600 h3, :not(aside) .bg-blue-600 h4, :not(aside) .bg-blue-600 h5, :not(aside) .bg-blue-600 h6,
+:not(aside) .bg-blue-700 h1, :not(aside) .bg-blue-700 h2, :not(aside) .bg-blue-700 h3, :not(aside) .bg-blue-700 h4, :not(aside) .bg-blue-700 h5, :not(aside) .bg-blue-700 h6,
+:not(aside) .bg-blue-800 h1, :not(aside) .bg-blue-800 h2, :not(aside) .bg-blue-800 h3, :not(aside) .bg-blue-800 h4, :not(aside) .bg-blue-800 h5, :not(aside) .bg-blue-800 h6,
+:not(aside) .bg-blue-900 h1, :not(aside) .bg-blue-900 h2, :not(aside) .bg-blue-900 h3, :not(aside) .bg-blue-900 h4, :not(aside) .bg-blue-900 h5, :not(aside) .bg-blue-900 h6 {
+  color: #ffffff !important;
+}
+

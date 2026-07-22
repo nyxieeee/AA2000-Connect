@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   Plus, 
   Calendar as CalendarIcon, 
@@ -28,6 +29,7 @@ import { storage } from '../../services/storage';
 interface ScheduledPost {
   id: string;
   day: number;
+  date?: string;
   platform: 'Facebook' | 'Instagram' | 'Viber' | 'TikTok' | 'Website';
   title: string;
   color: string;
@@ -39,6 +41,10 @@ interface ScheduledPost {
     clicks: number;
   };
 }
+
+const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
+const MISTRAL_API_KEY = import.meta.env.VITE_MISTRAL_API_KEY;
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
 const SocialPlannerPage = () => {
   const [activeTab, setActiveTab] = useState('Calendar');
@@ -73,6 +79,7 @@ const SocialPlannerPage = () => {
     },
   ]);
 
+  const [currentDate, setCurrentDate] = useState(new Date());
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedPosts, setGeneratedPosts] = useState<string[]>([]);
@@ -80,9 +87,22 @@ const SocialPlannerPage = () => {
     day: new Date().getDate(), 
     title: '', 
     platform: 'Facebook',
+    date: new Date().toISOString().split('T')[0],
   });
   const [selectedMedia, setSelectedMedia] = useState<{type: 'image' | 'video', name: string} | null>(null);
   const [aiTopic, setAiTopic] = useState('');
+
+  const handlePrevMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+  };
+
+  const handleNextMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+  };
+
+  const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
+  let firstDayIndex = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
+  firstDayIndex = firstDayIndex === 0 ? 6 : firstDayIndex - 1;
 
   const handleSchedule = (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,6 +116,7 @@ const SocialPlannerPage = () => {
     const postToAdd: ScheduledPost = {
       id: Math.random().toString(36).substr(2, 9),
       day: newPost.day || 1,
+      date: newPost.date || new Date().toISOString().split('T')[0],
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       platform: newPost.platform as any,
       title: newPost.title || '',
@@ -109,21 +130,129 @@ const SocialPlannerPage = () => {
     setPosts(updated);
     storage.set('mktg_posts', updated);
     setIsAddModalOpen(false);
-    setNewPost({ day: new Date().getDate(), title: '', platform: 'Facebook' });
+    setNewPost({ 
+      day: new Date().getDate(), 
+      title: '', 
+      platform: 'Facebook',
+      date: new Date().toISOString().split('T')[0]
+    });
     setSelectedMedia(null);
   };
 
-  const generateAIContent = () => {
+  const generateAIContent = async () => {
     setIsGenerating(true);
     setGeneratedPosts([]);
-    setTimeout(() => {
-      setGeneratedPosts([
-        "🔥 Protecting your home starts with the right equipment. Check out our latest fire detection systems! #FireSafety #AA2000",
-        "Did you know? Regular maintenance of your alarm systems can save lives. 🛡️ Book a tech visit today! #AA2000Connect",
-        "Introducing the 2026 Smart Sensor line. Sleek, efficient, and neural-ready. 🤖 #Innovation #Safety"
-      ]);
-      setIsGenerating(false);
-    }, 1500);
+
+    const topic = aiTopic.trim() || 'AA2000 Security and Technology Solutions';
+    const systemPrompt = `You are a professional social media marketing copywriter for AA2000 Security & Technology Solutions Inc., a leading system integrator specializing in fire safety, security, and building automation (FDAS, CCTV, Access Control, Structured Cabling, Suppression).
+Generate exactly 3 diverse, highly detailed, professional, engaging, and high-quality social media posts on the topic requested by the user.
+Each post should:
+1. Have an attention-grabbing, professional header.
+2. Provide informative, educational, or engaging copy (1-2 short paragraphs) that explains the importance, benefits, or industry standards related to the topic.
+3. Include a clear call to action (CTA).
+4. Include 3-4 professional hashtags (like #FireSafety, #AA2000, #CCTV, #SmartSolutions) without emojis.
+Do not use any Markdown formatting (no hashes, no asterisks, no headers). Output each post as a single block. Separate each of the 3 posts with the exact text delimiter '---POST_SPLIT---'. Do not use any emojis.`;
+
+    const userPrompt = `Generate 3 detailed marketing posts about the topic: "${topic}".`;
+
+    let success = false;
+    let resultsText = '';
+
+    // 1. Try Groq
+    if (GROQ_API_KEY) {
+      try {
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${GROQ_API_KEY}`
+          },
+          body: JSON.stringify({
+            model: 'llama3-8b-8192',
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: userPrompt }
+            ]
+          })
+        });
+        if (response.ok) {
+          const data = await response.json();
+          resultsText = data.choices?.[0]?.message?.content || '';
+          if (resultsText) success = true;
+        }
+      } catch (e) {
+        console.error('AI post gen (Groq) failed, trying Mistral:', e);
+      }
+    }
+
+    // 2. Try Mistral
+    if (!success && MISTRAL_API_KEY) {
+      try {
+        const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${MISTRAL_API_KEY}`
+          },
+          body: JSON.stringify({
+            model: 'open-mistral-7b',
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: userPrompt }
+            ]
+          })
+        });
+        if (response.ok) {
+          const data = await response.json();
+          resultsText = data.choices?.[0]?.message?.content || '';
+          if (resultsText) success = true;
+        }
+      } catch (e) {
+        console.error('AI post gen (Mistral) failed, trying Gemini:', e);
+      }
+    }
+
+    // 3. Try Gemini
+    if (!success && GEMINI_API_KEY) {
+      try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: systemPrompt + '\n\n' + userPrompt }] }]
+          })
+        });
+        if (response.ok) {
+          const data = await response.json();
+          resultsText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          if (resultsText) success = true;
+        }
+      } catch (e) {
+        console.error('AI post gen (Gemini) failed:', e);
+      }
+    }
+
+    if (success && resultsText) {
+      const items = resultsText
+        .split('---POST_SPLIT---')
+        .map(post => post.replace(/\*\*/g, '').trim())
+        .filter(post => post.length > 0)
+        .slice(0, 3);
+      if (items.length > 0) {
+        setGeneratedPosts(items);
+        setIsGenerating(false);
+        return;
+      }
+    }
+
+    // Offline simulation fallback
+    await new Promise(r => setTimeout(r, 1200 + Math.random() * 800));
+    setGeneratedPosts([
+      `Ensuring compliance with local fire safety codes is not just a regulatory checkmark—it is a foundational pillar of business continuity. Our team at AA2000 specializes in integrating state-of-the-art Fire Detection and Alarm Systems (FDAS) tailored to your building's unique architecture. From addressable smoke detectors to centralized control panels, we guarantee high-reliability monitoring. Contact our engineering team today to schedule an audit. #FireSafety #BuildingSafety #Compliance #AA2000`,
+      `Modern CCTV networks do more than record footage—they serve as the proactive eyes of your security team. With intelligent video analytics, perimeter intrusion detection, and high-definition low-light coverage, AA2000 integrates comprehensive surveillance systems that secure your assets 24/7. Connect with us to design a centralized command center for your facility. #Surveillance #SecuritySystems #SafetyFirst #CCTV #AA2000`,
+      `A robust structured cabling system is the nervous system of your business communication. AA2000 provides certified copper and fiber optic installations that support high-speed data transmission, reducing latency and maximizing uptime for your enterprise applications. Contact our technical consultants to upgrade your communication infrastructure. #StructuredCabling #FiberOptic #EnterpriseNetwork #TechSolutions #AA2000`
+    ]);
+    setIsGenerating(false);
   };
 
   const platforms = [
@@ -159,70 +288,86 @@ const SocialPlannerPage = () => {
 
       {activeTab === 'Calendar' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Calendar Grid */}
-          <div className="lg:col-span-2 glass-card p-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-              <div className="flex items-center gap-3">
-                 <div className="flex items-center bg-slate-50 rounded-xl p-1 border border-surface-border">
-                    <button className="p-2 hover:bg-white rounded-lg transition-all text-slate-400 hover:text-navy-900"><ChevronLeft size={16} /></button>
-                    <span className="px-4 text-[10px] font-semibold uppercase tracking-widest text-navy-900">
-                      {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                    </span>
-                    <button className="p-2 hover:bg-white rounded-lg transition-all text-slate-400 hover:text-navy-900"><ChevronRight size={16} /></button>
-                 </div>
+            {/* Calendar Grid */}
+            <div className="lg:col-span-2 glass-card p-6">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                <div className="flex items-center gap-3">
+                   <div className="flex items-center bg-slate-50 rounded-xl p-1 border border-surface-border">
+                      <button onClick={handlePrevMonth} className="p-2 hover:bg-white rounded-lg transition-all text-slate-400 hover:text-navy-900"><ChevronLeft size={16} /></button>
+                      <span className="px-4 text-[10px] font-semibold uppercase tracking-widest text-navy-900">
+                        {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                      </span>
+                      <button onClick={handleNextMonth} className="p-2 hover:bg-white rounded-lg transition-all text-slate-400 hover:text-navy-900"><ChevronRight size={16} /></button>
+                   </div>
+                </div>
+                <button 
+                  onClick={() => setIsAddModalOpen(true)}
+                  className="premium-button flex items-center gap-2"
+                >
+                  <Plus size={16} />
+                  <span>New Broadcast</span>
+                </button>
               </div>
-              <button 
-                onClick={() => setIsAddModalOpen(true)}
-                className="premium-button flex items-center gap-2"
-              >
-                <Plus size={16} />
-                <span>New Broadcast</span>
-              </button>
-            </div>
 
-            <div className="grid grid-cols-7 gap-px bg-slate-100 border border-slate-100 rounded-2xl overflow-hidden shadow-inner">
-              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
-                <div key={day} className="bg-slate-50/80 p-3 text-[9px] font-semibold text-slate-400 uppercase text-center tracking-[0.2em]">{day}</div>
-              ))}
-              {Array.from({ length: 31 }).map((_, i) => {
-                const dayPosts = posts.filter(p => p.day === i + 1);
-                const isToday = i + 1 === new Date().getDate();
-                return (
-                  <div 
-                    key={i} 
-                    onClick={() => {
-                      setNewPost({ ...newPost, day: i + 1 });
-                      setIsAddModalOpen(true);
-                    }}
-                    className={cn(
-                      "bg-white min-h-[110px] p-2.5 hover:bg-slate-50 transition-colors cursor-pointer group relative",
-                      isToday ? "bg-brand-blue/[0.02]" : ""
-                    )}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                       <span className={cn(
-                         "text-[10px] font-semibold transition-colors",
-                         isToday ? "text-brand-blue" : "text-slate-200 group-hover:text-navy-900"
-                       )}>{i + 1}</span>
+              <div className="grid grid-cols-7 gap-px bg-slate-100 border border-slate-100 rounded-2xl overflow-hidden shadow-inner">
+                {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
+                  <div key={day} className="bg-slate-50/80 p-3 text-[9px] font-semibold text-slate-400 uppercase text-center tracking-[0.2em]">{day}</div>
+                ))}
+                
+                {Array.from({ length: firstDayIndex }).map((_, idx) => (
+                  <div key={`spacer-${idx}`} className="bg-slate-50/20 min-h-[110px]" />
+                ))}
+
+                {Array.from({ length: daysInMonth }).map((_, i) => {
+                  const day = i + 1;
+                  const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                  
+                  const dayPosts = posts.filter(p => {
+                    if (p.date) {
+                      return p.date === dateStr;
+                    }
+                    const isCurrentMonth = currentDate.getMonth() === new Date().getMonth() && currentDate.getFullYear() === new Date().getFullYear();
+                    return isCurrentMonth && p.day === day;
+                  });
+
+                  const isToday = day === new Date().getDate() && currentDate.getMonth() === new Date().getMonth() && currentDate.getFullYear() === new Date().getFullYear();
+
+                  return (
+                    <div 
+                      key={day} 
+                      onClick={() => {
+                        setNewPost({ ...newPost, day, date: dateStr });
+                        setIsAddModalOpen(true);
+                      }}
+                      className={cn(
+                        "bg-white min-h-[110px] p-2.5 hover:bg-slate-50 transition-colors cursor-pointer group relative",
+                        isToday ? "bg-brand-blue/[0.02]" : ""
+                      )}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                         <span className={cn(
+                           "text-[10px] font-semibold transition-colors",
+                           isToday ? "text-brand-blue" : "text-slate-200 group-hover:text-navy-900"
+                         )}>{day}</span>
+                      </div>
+                      <div className="space-y-1">
+                        {dayPosts.map((p, idx) => (
+                          <div key={idx} className={cn("p-1.5 border rounded-lg flex items-center gap-1.5 overflow-hidden shadow-sm transition-transform hover:scale-[1.02]", p.color)}>
+                            {p.platform === 'Facebook' && <Facebook size={10} />}
+                            {p.platform === 'Instagram' && <Instagram size={10} />}
+                            {p.platform === 'Viber' && <MessageCircle size={10} />}
+                            {p.platform === 'TikTok' && <Video size={10} />}
+                            {p.platform === 'Website' && <Globe size={10} />}
+                            <span className="text-[8px] font-semibold uppercase tracking-tight truncate leading-none">{p.title}</span>
+                            {(p.mediaType) && <ImageIcon size={8} className="ml-auto shrink-0 opacity-50" />}
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                    <div className="space-y-1">
-                      {dayPosts.map((p, idx) => (
-                        <div key={idx} className={cn("p-1.5 border rounded-lg flex items-center gap-1.5 overflow-hidden shadow-sm transition-transform hover:scale-[1.02]", p.color)}>
-                          {p.platform === 'Facebook' && <Facebook size={10} />}
-                          {p.platform === 'Instagram' && <Instagram size={10} />}
-                          {p.platform === 'Viber' && <MessageCircle size={10} />}
-                          {p.platform === 'TikTok' && <Video size={10} />}
-                          {p.platform === 'Website' && <Globe size={10} />}
-                          <span className="text-[8px] font-semibold uppercase tracking-tight truncate leading-none">{p.title}</span>
-                          {(p.mediaType) && <ImageIcon size={8} className="ml-auto shrink-0 opacity-50" />}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
-          </div>
 
           <div className="space-y-6">
             {/* Real-time Quick Stats */}
@@ -293,11 +438,12 @@ const SocialPlannerPage = () => {
                 {generatedPosts.length > 0 && (
                   <div className="space-y-3 pt-2">
                     {generatedPosts.map((p, idx) => (
-                      <div key={idx} className="p-3 bg-slate-50 border border-slate-100 rounded-xl group relative hover:border-brand-blue/30 transition-all cursor-pointer">
-                        <p className="text-[10px] text-navy-900 leading-relaxed pr-6">{p}</p>
-                        <button onClick={() => { setNewPost({...newPost, title: p}); setIsAddModalOpen(true); }} className="absolute top-2 right-2 p-1 text-brand-blue opacity-0 group-hover:opacity-100 transition-all">
-                           <Plus size={14} />
-                        </button>
+                      <div 
+                        key={idx} 
+                        onClick={() => { setNewPost({ ...newPost, title: p }); setIsAddModalOpen(true); }}
+                        className="p-3.5 bg-slate-50 border border-slate-100 rounded-xl hover:border-brand-blue/30 hover:bg-white hover:shadow-md transition-all cursor-pointer group"
+                      >
+                        <p className="text-[10px] text-navy-900 leading-relaxed">{p}</p>
                       </div>
                     ))}
                   </div>
@@ -385,51 +531,52 @@ const SocialPlannerPage = () => {
       )}
 
       {/* Schedule Modal */}
-      {isAddModalOpen && (
-        <div className="fixed inset-0 bg-navy-900/40 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-          <div className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl border border-surface-border overflow-hidden animate-in">
-            <div className="px-10 py-6 border-b border-surface-border flex items-center justify-between bg-slate-50/50">
-              <div className="flex items-center gap-4">
-                 <div className="p-3 bg-brand-blue text-white rounded-2xl shadow-xl shadow-brand-blue/20">
-                    <CalendarIcon size={20} />
+      {isAddModalOpen && createPortal(
+        <div className="fixed inset-0 bg-navy-900/40 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
+          <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-surface-border overflow-hidden animate-in">
+            <div className="px-6 py-4 border-b border-surface-border flex items-center justify-between bg-slate-50/50">
+              <div className="flex items-center gap-3">
+                 <div className="p-2 bg-brand-blue text-white rounded-xl shadow-md shadow-brand-blue/15">
+                    <CalendarIcon size={16} />
                  </div>
                  <div>
-                    <h2 className="text-base font-semibold text-navy-900 uppercase tracking-[0.15em]">Create Broadcast</h2>
-                    <p className="sub-title mb-0 opacity-60">Prepare your multi-channel message</p>
+                    <h2 className="text-sm font-bold text-navy-900 uppercase tracking-widest leading-none">Create Broadcast</h2>
+                    <p className="text-[10px] text-slate-400 mt-1 uppercase tracking-wider mb-0 opacity-80">Prepare your multi-channel message</p>
                  </div>
               </div>
               <button 
+                type="button"
                 onClick={() => setIsAddModalOpen(false)}
-                className="p-2 hover:bg-white rounded-xl transition-colors text-slate-400 hover:text-navy-900"
+                className="p-1.5 hover:bg-white rounded-xl transition-colors text-slate-400 hover:text-navy-900"
               >
-                <X size={24} />
+                <X size={18} />
               </button>
             </div>
-            <form onSubmit={handleSchedule} className="p-10 space-y-8">
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <label className="sub-title">Post Caption</label>
+            <form onSubmit={handleSchedule} className="p-6 space-y-6">
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Post Caption</label>
                   <textarea 
                     rows={3}
                     required
                     value={newPost.title}
                     onChange={(e) => setNewPost({ ...newPost, title: e.target.value })}
-                    className="input-field min-h-[120px] resize-none p-5 normal-case"
+                    className="input-field min-h-[90px] resize-none p-3.5 normal-case text-xs"
                     placeholder="Describe your content strategy..."
                   />
                 </div>
 
-                <div className="space-y-2">
-                   <label className="sub-title block">Media Asset (Photo/Video)</label>
-                   <div className="grid grid-cols-1 gap-4">
+                <div className="space-y-1.5">
+                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Media Asset (Photo/Video)</label>
+                   <div className="grid grid-cols-1 gap-3">
                       {!selectedMedia ? (
-                        <div className="border-2 border-dashed border-slate-200 rounded-3xl p-8 flex flex-col items-center justify-center text-center space-y-3 hover:border-brand-blue/40 hover:bg-slate-50/50 transition-all cursor-pointer group">
-                           <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 group-hover:text-brand-blue group-hover:scale-110 transition-all">
-                              <Upload size={24} />
+                        <div className="relative border-2 border-dashed border-slate-200 rounded-2xl p-6 flex flex-col items-center justify-center text-center space-y-2 hover:border-brand-blue/40 hover:bg-slate-50/50 transition-all cursor-pointer group">
+                           <div className="w-10 h-10 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 group-hover:text-brand-blue group-hover:scale-110 transition-all">
+                              <Upload size={18} />
                            </div>
                            <div>
-                              <p className="text-[11px] font-semibold text-navy-900 uppercase tracking-widest">Upload Media</p>
-                              <p className="sub-title mt-1 mb-0 opacity-60">Drag & drop or browse files (Max 50MB)</p>
+                              <p className="text-[9px] font-bold text-navy-900 uppercase tracking-widest">Upload Media</p>
+                              <p className="text-[9px] text-slate-400 mt-0.5 mb-0 opacity-60">Drag & drop or browse files (Max 50MB)</p>
                            </div>
                            <input 
                             type="file" 
@@ -448,43 +595,50 @@ const SocialPlannerPage = () => {
                            <label htmlFor="media-upload" className="absolute inset-0 cursor-pointer"></label>
                         </div>
                       ) : (
-                        <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-2xl flex items-center justify-between">
+                        <div className="p-3 bg-emerald-50 border border-emerald-100 rounded-xl flex items-center justify-between">
                            <div className="flex items-center gap-3">
-                              <div className="p-2 bg-white rounded-xl shadow-sm text-emerald-600">
-                                 {selectedMedia.type === 'video' ? <FileVideo size={20} /> : <ImageIcon size={20} />}
+                              <div className="p-2 bg-white rounded-lg shadow-sm text-emerald-600">
+                                 {selectedMedia.type === 'video' ? <FileVideo size={16} /> : <ImageIcon size={16} />}
                               </div>
                               <div>
-                                 <p className="text-xs font-medium text-emerald-900 uppercase">{selectedMedia.name}</p>
-                                 <p className="text-[9px] text-emerald-600 font-semibold uppercase tracking-widest">Asset Ready for Upload</p>
+                                 <p className="text-[11px] font-bold text-emerald-950 truncate max-w-[200px]">{selectedMedia.name}</p>
+                                 <p className="text-[8px] text-emerald-600 font-bold uppercase tracking-widest">Asset Ready for Upload</p>
                               </div>
                            </div>
-                           <button onClick={() => setSelectedMedia(null)} className="p-1.5 hover:bg-emerald-100 rounded-lg text-emerald-600 transition-all">
-                              <X size={16} />
+                           <button type="button" onClick={() => setSelectedMedia(null)} className="p-1 hover:bg-emerald-100 rounded-lg text-emerald-600 transition-all">
+                              <X size={14} />
                            </button>
                         </div>
                       )}
                    </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="sub-title">Target Day</label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Schedule Date</label>
                     <input 
-                      type="number" 
-                      min="1" max="31"
+                      type="date" 
                       required
-                      value={newPost.day}
-                      onChange={(e) => setNewPost({ ...newPost, day: parseInt(e.target.value) })}
-                      className="input-field"
+                      value={newPost.date}
+                      onChange={(e) => {
+                        const dateVal = e.target.value;
+                        const parsedDate = new Date(dateVal);
+                        setNewPost({ 
+                          ...newPost, 
+                          date: dateVal, 
+                          day: isNaN(parsedDate.getDate()) ? new Date().getDate() : parsedDate.getDate()
+                        });
+                      }}
+                      className="input-field text-xs py-2.5"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <label className="sub-title">Broadcast Channel</label>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Broadcast Channel</label>
                     <select 
                       value={newPost.platform}
                       // eslint-disable-next-line @typescript-eslint/no-explicit-any
                       onChange={(e) => setNewPost({ ...newPost, platform: e.target.value as any })}
-                      className="input-field cursor-pointer"
+                      className="input-field text-xs py-2.5 cursor-pointer"
                     >
                       {platforms.map(p => <option key={p.id} value={p.id}>{p.id}</option>)}
                     </select>
@@ -492,24 +646,25 @@ const SocialPlannerPage = () => {
                 </div>
               </div>
 
-              <div className="pt-8 flex gap-4">
+              <div className="pt-4 flex gap-3">
                 <button 
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="flex-1 py-5 px-6 bg-slate-50 text-slate-500 rounded-3xl font-semibold hover:bg-slate-100 transition-all text-[11px] uppercase tracking-[0.2em] border border-slate-200"
+                  className="flex-1 py-3 px-4 bg-slate-50 text-slate-500 rounded-2xl font-bold hover:bg-slate-100 transition-all text-[9px] uppercase tracking-wider border border-slate-200"
                 >
                   Discard
                 </button>
                 <button 
                   type="submit"
-                  className="flex-1 py-5 px-6 bg-brand-blue text-white rounded-3xl font-semibold uppercase tracking-[0.2em] text-[11px] hover:bg-brand-light transition-all shadow-2xl shadow-brand-blue/20 active:scale-95"
+                  className="flex-1 py-3 px-4 bg-brand-blue text-white rounded-2xl font-bold uppercase tracking-wider text-[9px] hover:bg-brand-light transition-all shadow-md shadow-brand-blue/15 active:scale-95"
                 >
                   Schedule Now
                 </button>
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </AnimatedPage>
   );

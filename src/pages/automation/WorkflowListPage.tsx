@@ -51,6 +51,7 @@ export default function WorkflowListPage({ onOpen }: Props) {
 
   const handleCreated = (workflowId: string) => {
     setShowCreateModal(false);
+    setActiveTab('All Workflows');
     const wf = workflows.find(w => w.id === workflowId);
     if (wf) onOpen(wf);
   };
@@ -167,7 +168,7 @@ export default function WorkflowListPage({ onOpen }: Props) {
               <th className="px-4 py-3 text-center">Total Enrolled</th>
               <th className="px-4 py-3 text-center">Active Enrolled</th>
               <th className="px-4 py-3">Last Updated</th>
-              <th className="px-4 py-3 w-24">Actions</th>
+              <th className="px-4 py-3 w-28">Actions</th>
               <th className="px-4 py-3 w-8"></th>
             </tr>
           </thead>
@@ -251,8 +252,8 @@ export default function WorkflowListPage({ onOpen }: Props) {
                       </>
                     )}
                     {wf.approvalStatus === 'draft' && (
-                      <button onClick={() => submitForApproval(wf.id)} className="px-2 py-1 text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 transition-all">
-                        Submit for Approval
+                      <button onClick={() => submitForApproval(wf.id)} className="px-2.5 py-1 text-[8px] font-black uppercase tracking-wider text-amber-600 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 transition-all whitespace-nowrap shadow-sm">
+                        Submit
                       </button>
                     )}
                     {wf.approvalStatus === 'approved' && (

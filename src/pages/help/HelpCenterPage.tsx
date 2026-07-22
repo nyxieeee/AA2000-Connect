@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { HelpCircle, PlayCircle, BookOpen, MessageCircle, Search, ChevronRight, Megaphone, X } from 'lucide-react';
+import { HelpCircle, PlayCircle, BookOpen, MessageCircle, Search, ChevronRight, Megaphone, X, Lightbulb } from 'lucide-react';
 import { AnimatedPage } from '../../components/ui/AnimatedPage';
 
 const SECTIONS = [
@@ -35,9 +35,9 @@ const SECTIONS = [
   {
     id: 'announcements', icon: Megaphone, label: 'Announcements', color: 'text-amber-600', bg: 'bg-amber-50',
     items: [
-      { title: '🎉 New Modules Released — July 2026', desc: 'Incentive System, KPI Monitor, Bidding Management, Product Catalog, and more are now available!' },
-      { title: '🔒 Security Update: MFA Coming Soon', desc: 'Multi-factor authentication will be enabled for all users starting August 2026.' },
-      { title: '📊 Q2 2026 Sales Conference', desc: 'Join the quarterly sales review on July 25, 2026 at the main office conference room.' },
+      { title: 'New Modules Released — July 2026', desc: 'Incentive System, KPI Monitor, Bidding Management, Product Catalog, and more are now available!' },
+      { title: 'Security Update: MFA Coming Soon', desc: 'Multi-factor authentication will be enabled for all users starting August 2026.' },
+      { title: 'Q2 2026 Sales Conference', desc: 'Join the quarterly sales review on July 25, 2026 at the main office conference room.' },
     ]
   },
 ];
@@ -138,7 +138,7 @@ const HelpCenterPage = () => {
                 <div className="pt-2 border-t border-slate-100 text-sm text-slate-600 leading-relaxed font-sans">
                   <p className="mb-3">{selectedItem.desc}</p>
                   <p className="text-xs text-slate-400 bg-slate-50 p-3 rounded-xl border border-dashed border-slate-200">
-                    💡 <strong>Pro Tip:</strong> For further training, contact the CRM Administrator or check the Policy Center files to review full operational standards for AA2000 Connect.
+                    <Lightbulb size={14} className="text-amber-500 inline-block mr-1 align-text-bottom" /> <strong>Pro Tip:</strong> For further training, contact the CRM Administrator or check the Policy Center files to review full operational standards for AA2000 Connect.
                   </p>
                 </div>
 

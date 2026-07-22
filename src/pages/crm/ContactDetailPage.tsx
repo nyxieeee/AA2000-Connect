@@ -379,7 +379,12 @@ AA2000 Enterprise Team"
                           : 'bg-white text-slate-500 border-surface-border hover:border-brand-blue/30'
                       )}
                     >
-                      {t === 'note' ? '📝 Note' : t === 'email' ? '📧 Email' : '📞 Call'}
+                      <span className="flex items-center justify-center gap-1.5">
+                        {t === 'note' && <FileText size={12} />}
+                        {t === 'email' && <Mail size={12} />}
+                        {t === 'call' && <Phone size={12} />}
+                        {t}
+                      </span>
                     </button>
                   ))}
                 </div>

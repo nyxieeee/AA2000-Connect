@@ -98,25 +98,27 @@ export const ConditionNode = memo(({ data, isConnectable }: { data: WorkflowNode
       isConnectable={isConnectable}
       className="w-3 h-3 bg-amber-400 border-2 border-white !-top-1.5"
     />
-    <div className="flex justify-between px-4 pb-2">
+    <div className="flex justify-between px-10 pb-4 relative">
       <div className="flex flex-col items-center">
-        <span className="text-[10px] font-bold text-emerald-600 mb-1">YES</span>
-        <Handle
-          type="source"
-          position={Position.Bottom}
-          id="yes"
-          className="w-3 h-3 bg-emerald-500 border-2 border-white static translate-y-0"
-        />
+        <span className="text-[10px] font-bold text-emerald-600">YES</span>
       </div>
       <div className="flex flex-col items-center">
-        <span className="text-[10px] font-bold text-rose-600 mb-1">NO</span>
-        <Handle
-          type="source"
-          position={Position.Bottom}
-          id="no"
-          className="w-3 h-3 bg-rose-500 border-2 border-white static translate-y-0"
-        />
+        <span className="text-[10px] font-bold text-rose-600">NO</span>
       </div>
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        id="yes"
+        isConnectable={isConnectable}
+        className="w-3.5 h-3.5 bg-emerald-500 border-2 border-white !bottom-[-7px] !left-[25%] !translate-x-0"
+      />
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        id="no"
+        isConnectable={isConnectable}
+        className="w-3.5 h-3.5 bg-rose-500 border-2 border-white !bottom-[-7px] !left-[75%] !translate-x-0"
+      />
     </div>
   </div>
 ));

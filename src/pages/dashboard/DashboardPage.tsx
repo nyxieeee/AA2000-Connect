@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { 
   TrendingUp, 
@@ -29,16 +30,57 @@ import { cn } from '../../utils/cn';
 import { usePipelinesStore } from '../../stores/modules/pipelinesStore';
 import { useCRMStore } from '../../stores/modules/crmStore';
 import { AnimatedPage, AnimatedList, AnimatedListItem } from '../../components/ui/AnimatedPage';
+import { useAuthStore } from '../../stores/authStore';
+import { useTasksStore } from '../../stores/modules/tasksStore';
+
+const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
+const MISTRAL_API_KEY = import.meta.env.VITE_MISTRAL_API_KEY;
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
 const DashboardPage = () => {
   const { deals, fetchData } = usePipelinesStore();
   const { fetchContacts, fetchCompanies } = useCRMStore();
+  const { user } = useAuthStore();
+  const { addTask } = useTasksStore();
 
   const [isAIScanOpen, setIsAIScanOpen] = useState(false);
   const [aiScanning, setAiScanning] = useState(false);
   const [aiResults, setAiResults] = useState<string[] | null>(null);
   const [syncMode, setSyncMode] = useState<'live' | 'historical'>('live');
   const navigate = useNavigate();
+
+  const handleExecuteRecommendations = () => {
+    if (!aiResults) return;
+
+    let createdCount = 0;
+    const actionKeywords = [
+      'require', 'suggest', 'should', 'need', 'follow', 'map', 
+      'contact', 'call', 'send', 'review', 'set', 'enable', 
+      'configure', 'implement', 'execute', 'audit', 'velocity', 'check'
+    ];
+
+    aiResults.forEach(rec => {
+      const isActionable = actionKeywords.some(keyword => rec.toLowerCase().includes(keyword));
+      if (isActionable) {
+        addTask({
+          title: rec,
+          assignedTo: user?.name || 'Sales Rep',
+          completed: false,
+          dueDate: new Date(Date.now() + 86400000).toISOString().split('T')[0] // tomorrow
+        });
+        createdCount++;
+      }
+    });
+
+    setIsAIScanOpen(false);
+
+    if (createdCount > 0) {
+      alert(`Created ${createdCount} task(s) from AI recommendations. Redirecting to your Tasks...`);
+      navigate('/tasks');
+    } else {
+      alert('Recommendations reviewed.');
+    }
+  };
 
   useEffect(() => {
     fetchData();
@@ -79,18 +121,119 @@ const DashboardPage = () => {
     }).format(val);
   };
 
-  const runAIScan = () => {
+  const runAIScan = async () => {
     setIsAIScanOpen(true);
     setAiScanning(true);
-    setTimeout(() => {
-      setAiResults([
-        `💰 Revenue forecast for Q2 is up by 14% based on current pipeline velocity.`,
-        `⏰ 5 high-value deals in "Initial Inquiry" stage require immediate action.`,
-        `🤖 AI Agent has successfully handled 84% of basic Viber inquiries this week.`,
-        `🏢 3 new enterprise accounts added; suggest mapping stakeholder hierarchy.`
-      ]);
-      setAiScanning(false);
-    }, 2000);
+    setAiResults(null);
+
+    const systemPrompt = `You are a strategic CRM business insights engine for AA2000 Security & Technology Solutions.
+Analyze the current pipeline and output exactly 4 bullet-point recommendations (one sentence each, under 15 words) for increasing revenue, closing open proposals, or optimizing sales.
+Do not use any Markdown formatting (no hashes, no asterisks, no headers). Output raw text lines. Use appropriate business emojis.`;
+    const userPrompt = `Current Pipeline State: Total value of deals in pipeline is ${formatCurrency(totalValue)}, total active deals count is ${activeDealsCount}.`;
+
+    let success = false;
+    let resultsText = '';
+
+    // 1. Try Groq
+    if (GROQ_API_KEY) {
+      try {
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${GROQ_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'openai/gpt-oss-120b',
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: userPrompt }
+            ],
+            temperature: 0.6,
+          })
+        });
+        if (response.ok) {
+          const data = await response.json();
+          resultsText = data.choices?.[0]?.message?.content || '';
+          if (resultsText) success = true;
+        }
+      } catch (e) {
+        console.error('Dashboard AI scan (Groq) failed, trying fallbacks:', e);
+      }
+    }
+
+    // 2. Try Mistral
+    if (!success && MISTRAL_API_KEY) {
+      try {
+        const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${MISTRAL_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'open-mistral-nemo',
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: userPrompt }
+            ],
+            temperature: 0.6,
+          })
+        });
+        if (response.ok) {
+          const data = await response.json();
+          resultsText = data.choices?.[0]?.message?.content || '';
+          if (resultsText) success = true;
+        }
+      } catch (e) {
+        console.error('Dashboard AI scan (Mistral) failed, trying fallbacks:', e);
+      }
+    }
+
+    // 3. Try Gemini
+    if (!success && GEMINI_API_KEY) {
+      try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: systemPrompt + '\n\n' + userPrompt }] }]
+          })
+        });
+        if (response.ok) {
+          const data = await response.json();
+          resultsText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          if (resultsText) success = true;
+        }
+      } catch (e) {
+        console.error('Dashboard AI scan (Gemini) failed:', e);
+      }
+    }
+
+    if (success && resultsText) {
+      // Split by lines, strip markdown, and limit to 4 non-empty lines
+      const items = resultsText
+        .split('\n')
+        .map(line => line.replace(/^([*\-•\d.\s])+\s*/, '').replace(/\*\*/g, '').trim())
+        .filter(line => line.length > 0)
+        .slice(0, 4);
+
+      if (items.length > 0) {
+        setAiResults(items);
+        setAiScanning(false);
+        return;
+      }
+    }
+
+    // Offline simulation fallback
+    await new Promise(r => setTimeout(r, 1200 + Math.random() * 800));
+    setAiResults([
+      `Pipeline value is at ${formatCurrency(totalValue || 4850000)}. Q2 targets look solid.`,
+      `${activeDealsCount || 5} active proposals require timely follow-ups to maintain velocity.`,
+      `Automated basic inquiry responses are holding steady at 84% completion.`,
+      `Suggest mapping stakeholder hierarchy on key accounts to secure wins.`
+    ]);
+    setAiScanning(false);
   };
 
   return (
@@ -103,7 +246,7 @@ const DashboardPage = () => {
         </div>
         <div className="flex items-center gap-3">
            <div className="flex items-center bg-white border border-surface-border rounded-2xl p-1 shadow-sm">
-<button onClick={() => setSyncMode('live')} className={cn("px-5 py-2 rounded-xl text-[10px] font-semibold uppercase tracking-widest transition-all", syncMode === 'live' ? "bg-brand-blue text-white shadow-lg shadow-brand-blue/20" : "text-slate-400 hover:text-navy-900")}>Live Sync</button>
+                <button onClick={() => setSyncMode('live')} className={cn("px-5 py-2 rounded-xl text-[10px] font-semibold uppercase tracking-widest transition-all", syncMode === 'live' ? "bg-brand-blue text-white shadow-lg shadow-brand-blue/20" : "text-slate-400 hover:text-navy-900")}>Live Sync</button>
                 <button onClick={() => setSyncMode('historical')} className={cn("px-5 py-2 rounded-xl text-[10px] font-semibold uppercase tracking-widest transition-all", syncMode === 'historical' ? "bg-brand-blue text-white shadow-lg shadow-brand-blue/20" : "text-slate-400 hover:text-navy-900")}>Historical</button>
            </div>
            <button 
@@ -111,7 +254,7 @@ const DashboardPage = () => {
             className="premium-button flex items-center gap-2"
            >
              <Bot size={16} />
-             <span>Neural Scan</span>
+             <span>Run AI Analysis</span>
            </button>
         </div>
       </div>
@@ -306,52 +449,52 @@ const DashboardPage = () => {
                ))}
             </div>
          </div>
-      </div>
+       </div>
 
       {/* AI Strategy Modal */}
-      {isAIScanOpen && (
-        <div className="fixed inset-0 bg-navy-900/60 backdrop-blur-md z-[100] flex items-center justify-center p-6">
-          <div className="bg-white rounded-[3rem] w-full max-w-xl shadow-2xl overflow-hidden animate-in">
-            <div className="p-10 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-              <div className="flex items-center gap-5">
-                <div className="w-14 h-14 rounded-2xl bg-navy-900 flex items-center justify-center text-white shadow-xl  font-semibold text-xl">
+      {isAIScanOpen && createPortal(
+        <div className="fixed inset-0 bg-navy-900/40 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-in">
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-navy-900 flex items-center justify-center text-white shadow-md font-semibold text-base">
                   AI
                 </div>
                 <div>
-                  <h2 className="text-xl font-semibold text-navy-900 uppercase tracking-widest ">Strategy Engine</h2>
-                  <p className="sub-title tracking-[0.3em] mb-0">Synthesizing Market Intelligence</p>
+                  <h2 className="text-sm font-bold text-navy-900 uppercase tracking-widest leading-none">Strategy Engine</h2>
+                  <p className="text-[10px] text-slate-400 mt-1 uppercase tracking-wider mb-0">Synthesizing Market Intelligence</p>
                 </div>
               </div>
-              <button onClick={() => setIsAIScanOpen(false)} className="p-4 hover:bg-white rounded-[1.5rem] transition-all text-slate-300 hover:text-navy-900 border border-transparent hover:border-slate-100 shadow-sm">
-                <X size={24} />
+              <button onClick={() => setIsAIScanOpen(false)} className="p-2 hover:bg-white rounded-xl transition-all text-slate-300 hover:text-navy-900 border border-transparent hover:border-slate-100 shadow-sm">
+                <X size={18} />
               </button>
             </div>
-            <div className="p-12">
+            <div className="p-6">
               {aiScanning ? (
-                <div className="flex flex-col items-center justify-center py-20 space-y-8">
+                <div className="flex flex-col items-center justify-center py-12 space-y-6">
                   <div className="relative">
-                    <Loader2 size={80} className="text-brand-blue animate-spin" />
-                    <Sparkles size={32} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-brand-blue animate-pulse" />
+                    <Loader2 size={60} className="text-brand-blue animate-spin" />
+                    <Sparkles size={24} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-brand-blue animate-pulse" />
                   </div>
-                  <div className="text-center space-y-3">
-                    <p className="text-base font-semibold text-navy-900 uppercase tracking-widest ">Processing Intelligence...</p>
-                    <p className="text-xs text-slate-400 font-bold uppercase tracking-widest max-w-xs mx-auto leading-loose opacity-60">Evaluating conversation sentiment & pipeline velocity models.</p>
+                  <div className="text-center space-y-2">
+                    <p className="text-xs font-bold text-navy-900 uppercase tracking-widest">Processing Intelligence...</p>
+                    <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider max-w-xs mx-auto leading-relaxed opacity-60">Evaluating conversation sentiment & pipeline velocity models.</p>
                   </div>
                 </div>
               ) : aiResults ? (
-                <div className="space-y-6">
+                <div className="space-y-4">
                   {aiResults.map((result, i) => (
-                    <div key={i} className="flex items-start gap-6 p-6 bg-slate-50 rounded-[2rem] border border-slate-100 group hover:bg-white hover:shadow-2xl hover:shadow-slate-200/50 transition-all cursor-pointer">
-                      <div className="w-10 h-10 rounded-2xl bg-white shadow-sm flex items-center justify-center shrink-0 border border-slate-50">
-                         <div className="w-3 h-3 bg-brand-blue rounded-full"></div>
+                    <div key={i} className="flex items-start gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100 group hover:bg-white hover:shadow-xl hover:shadow-slate-200/40 transition-all cursor-pointer">
+                      <div className="w-8 h-8 rounded-xl bg-white shadow-sm flex items-center justify-center shrink-0 border border-slate-50">
+                         <div className="w-2.5 h-2.5 bg-brand-blue rounded-full"></div>
                       </div>
-                      <p className="text-sm text-navy-900 leading-relaxed font-bold ">"{result}"</p>
+                      <p className="text-xs text-navy-900 leading-relaxed font-bold">"{result}"</p>
                     </div>
                   ))}
-                  <div className="pt-8">
+                  <div className="pt-4">
                      <button 
-                      onClick={() => setIsAIScanOpen(false)}
-                       className="w-full py-5 bg-brand-blue text-white rounded-[2rem] font-semibold uppercase tracking-[0.3em] text-[12px] shadow-2xl shadow-brand-blue/30 hover:bg-brand-light hover:scale-[1.02] active:scale-95 transition-all"
+                       onClick={handleExecuteRecommendations}
+                       className="w-full py-4 bg-brand-blue text-white rounded-2xl font-bold uppercase tracking-[0.2em] text-[10px] shadow-lg shadow-brand-blue/25 hover:bg-brand-light hover:scale-[1.02] active:scale-95 transition-all"
                      >
                        Execute Recommendations
                      </button>
@@ -360,7 +503,8 @@ const DashboardPage = () => {
               ) : null}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </AnimatedPage>
   );

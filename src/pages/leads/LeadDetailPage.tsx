@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Mail, Phone, Building2, Globe, Trash2, Save, CheckCircle2, XCircle } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, Building2, Globe, Trash2, Save, CheckCircle2, XCircle, Calendar } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { useLeadsStore } from '../../stores/modules/leadsStore';
 import type { Lead } from '../../stores/modules/leadsStore';
@@ -147,7 +147,7 @@ export default function LeadDetailPage() {
                 </div>
               )}
               <div className="flex items-center gap-3">
-                <div className="text-slate-400 text-sm">📅</div>
+                <div className="text-slate-400"><Calendar size={14} /></div>
                 <div>
                   <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-widest">Created</p>
                   <p className="text-sm font-semibold text-navy-900">{new Date(lead.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>

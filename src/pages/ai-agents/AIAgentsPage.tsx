@@ -46,10 +46,13 @@ const AIAgentsPage = () => {
     e.preventDefault();
     if (!form.name || !form.role) return;
     
+    const rawDesc = form.description || form.role;
+    const finalDesc = `${rawDesc}\n\nStrict Rule: Plain text responses only. Do NOT use markdown symbols, bold text (**), bullet points (* or -), or headers (#).`;
+
     addAgent({
       name: form.name,
       role: form.role,
-      description: form.description || form.role,
+      description: finalDesc,
       category: form.category,
       schedule: form.schedule,
       model: form.model,
@@ -148,7 +151,7 @@ const AIAgentsPage = () => {
       </div>
 
       {/* Agents Listing and details layout */}
-      <div className="max-w-4xl space-y-6">
+      <div className="space-y-6">
           {filteredAgents.map((agent, index) => {
             const IconComp = CATEGORY_ICONS[agent.category] || Brain;
             const catColors = CATEGORY_COLORS[agent.category] || '';
@@ -205,7 +208,7 @@ const AIAgentsPage = () => {
                       >
                         <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
                         <option value="groq/llama-3.1-8b">Llama 3.1 8B</option>
-                        <option value="groq/gpt-oss-120b">GPT OSS 120b</option>
+                        <option value="openai/gpt-oss-120b">GPT OSS 120b</option>
                         <option value="groq/qwen-3.6-27b">Qwen 3.6 27b</option>
                         <option value="mistral/open-mistral-nemo">Mistral Nemo</option>
                       </select>
@@ -319,7 +322,7 @@ const AIAgentsPage = () => {
                     >
                       <option value="gemini-2.5-flash">Gemini 2.5 Flash {form.category === 'Vision' ? '(Required for Vision)' : ''}</option>
                       <option value="groq/llama-3.1-8b">Llama 3.1 8B (Groq)</option>
-                      <option value="groq/gpt-oss-120b">GPT OSS 120b (Groq)</option>
+                      <option value="openai/gpt-oss-120b">GPT OSS 120b (OpenAI)</option>
                       <option value="groq/qwen-3.6-27b">Qwen 3.6 27b (Groq)</option>
                       <option value="mistral/open-mistral-nemo">Open Mistral Nemo</option>
                     </select>
@@ -331,9 +334,9 @@ const AIAgentsPage = () => {
                   <input className="input-field" required placeholder="e.g. Scans and reviews tender requirements documents." value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))} />
                 </div>
 
-                <div className="space-y-1">
-                  <label className="sub-title">Detailed System Prompt / Context</label>
-                  <textarea className="input-field min-h-[80px] py-2 resize-none" placeholder="Give the agent instructions on how to handle tasks..." value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
+                 <div className="space-y-1">
+                  <label className="sub-title">Detailed System Prompt / Context (Plain Text Only)</label>
+                  <textarea className="input-field min-h-[80px] py-2 resize-none" placeholder="Give the agent instructions. Do not use Markdown formatting (e.g., no bold **, hashes #, or list characters)." value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
                 </div>
 
                 {form.category === 'Conversational' && (

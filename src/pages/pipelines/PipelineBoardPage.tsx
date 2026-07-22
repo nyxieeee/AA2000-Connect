@@ -140,7 +140,7 @@ const SortableDealCard = ({ deal, onDelete }: { deal: Deal, onDelete: (id: strin
 
 const PipelineBoardPage = () => {
   const { deals, pipelines, activePipelineId, fetchData, setActivePipeline, updateDealStage, addDeal, deleteDeal, addPipeline, updatePipeline, addStage, deleteStage } = usePipelinesStore();
-  const { contacts, fetchContacts } = useCRMStore();
+  const { contacts, companies, fetchContacts, fetchCompanies } = useCRMStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [isNewDealModalOpen, setIsNewDealModalOpen] = useState(false);
   const [isNewPipelineModalOpen, setIsNewPipelineModalOpen] = useState(false);
@@ -170,7 +170,8 @@ const PipelineBoardPage = () => {
   useEffect(() => {
     fetchData();
     fetchContacts();
-  }, [fetchData, fetchContacts]);
+    fetchCompanies();
+  }, [fetchData, fetchContacts, fetchCompanies]);
 
   useEffect(() => {
     if (isAddingStage && stageInputRef.current) {
@@ -181,6 +182,12 @@ const PipelineBoardPage = () => {
   const activePipeline = useMemo(() => 
     pipelines.find(p => p.id === activePipelineId) || pipelines[0],
   [pipelines, activePipelineId]);
+
+  useEffect(() => {
+    if (isNewDealModalOpen && activePipeline?.stages?.length > 0) {
+      setNewDealStage(activePipeline.stages[0].id);
+    }
+  }, [isNewDealModalOpen, activePipeline]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -243,13 +250,15 @@ const PipelineBoardPage = () => {
 
   const handleAddDeal = () => {
     if (!activePipeline) return;
+    const selectedCompany = selectedContact?.companyId ? companies.find(c => c.id === selectedContact.companyId) : null;
     addDeal({
       title: newDeal.title,
       value: newDeal.value,
-      companyName: selectedContact?.companyId || '', // In a real app, resolve company from contact
+      companyId: selectedContact?.companyId || '',
+      companyName: selectedCompany ? selectedCompany.name : '',
       product: newDeal.product,
       pipelineId: activePipeline.id,
-      stageId: activePipeline.stages[0].id,
+      stageId: newDealStage || activePipeline.stages[0].id,
       contactId: newDeal.contactId,
       status: newDeal.status,
       assigned: 'Admin'

@@ -17,7 +17,7 @@ export const Navbar: React.FC = () => {
   const unread = useNotificationsStore(s => s.notifications.filter(n => !n.read).length);
 
   return (
-    <nav className="h-20 bg-white border-b border-surface-border flex items-center justify-between px-8 sticky top-0 z-50 shadow-sm backdrop-blur-md bg-white/80">
+    <nav className="h-20 bg-white border-b border-surface-border flex items-center justify-between px-8 sticky top-0 z-40 shadow-sm backdrop-blur-md bg-white/80">
       <div className="flex items-center gap-6">
         {/* Real-time Status Badge */}
         <div className="flex items-center gap-3 px-4 py-2 bg-slate-50 rounded-2xl border border-slate-100 shadow-inner">

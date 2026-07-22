@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Plus, Trash2, ToggleLeft, ToggleRight, MapPin } from 'lucide-react';
 import { useLeadsStore } from '../../stores/modules/leadsStore';
 import { AnimatedPage, AnimatedList, AnimatedListItem } from '../../components/ui/AnimatedPage';
 
@@ -77,7 +77,7 @@ export default function LeadAssignmentPage() {
                     <p className="text-sm font-bold text-navy-900">{rule.name}</p>
                     <div className="flex items-center gap-2 mt-0.5 text-[10px] text-slate-500">
                       {rule.source && <span className="px-1.5 py-0.5 bg-slate-100 rounded font-semibold">{rule.source}</span>}
-                      {rule.territory && <span>📍 {rule.territory}</span>}
+                      {rule.territory && <span className="flex items-center gap-1"><MapPin size={10} /> {rule.territory}</span>}
                       <span>→ {rule.assignToUserId}</span>
                     </div>
                   </div>

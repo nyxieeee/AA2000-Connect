@@ -214,7 +214,7 @@ export const Sidebar: React.FC = () => {
                   className={({ isActive }) => cn(
                     "flex items-center gap-3 px-4 py-2 rounded-xl transition-all duration-200 group",
                     isActive
-                      ? "bg-brand-blue/10 text-brand-blue font-semibold"
+                      ? "bg-brand-blue text-white font-semibold shadow-md shadow-brand-blue/10"
                       : "text-slate-500 hover:text-navy-900 hover:bg-slate-50"
                   )}
                 >
@@ -242,7 +242,7 @@ export const Sidebar: React.FC = () => {
           className={({ isActive }) => cn(
             "flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200",
             isActive
-              ? "bg-brand-blue/10 text-brand-blue font-semibold"
+              ? "bg-brand-blue text-white font-semibold shadow-md shadow-brand-blue/10"
               : "text-slate-500 hover:text-navy-900 hover:bg-slate-50"
           )}
         >

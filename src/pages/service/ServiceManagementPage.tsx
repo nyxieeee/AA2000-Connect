@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
-import { Wrench, Calendar, AlertTriangle, CheckCircle2, Clock, User, Shield, Plus } from 'lucide-react';
+import { Wrench, Calendar, AlertTriangle, CheckCircle2, Clock, User, Shield, Plus, X } from 'lucide-react';
 import { AnimatedPage } from '../../components/ui/AnimatedPage';
-import { useServiceManagementStore, type TicketStatus } from '../../stores/modules/serviceManagementStore';
+import { useServiceManagementStore, type TicketStatus, type TicketType, type ServiceTicket } from '../../stores/modules/serviceManagementStore';
+import { useCRMStore } from '../../stores/modules/crmStore';
 
 const STATUS_STYLES: Record<TicketStatus, string> = {
   scheduled: 'bg-blue-50 text-blue-600', in_progress: 'bg-amber-50 text-amber-600',
@@ -15,14 +17,75 @@ const PRIORITY_STYLES: Record<string, string> = {
 };
 
 const ServiceManagementPage = () => {
-  const { tickets, updateTicket } = useServiceManagementStore();
+  const { tickets, updateTicket, addTicket } = useServiceManagementStore();
+  const { companies, fetchCompanies } = useCRMStore();
+
   const [filter, setFilter] = useState<TicketStatus | 'all'>('all');
   const [typeFilter, setTypeFilter] = useState<'all' | 'preventive' | 'corrective'>('all');
+
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [newTicket, setNewTicket] = useState<Partial<Omit<ServiceTicket, 'id' | 'createdAt'>>>({
+    type: 'preventive',
+    clientName: '',
+    clientId: '',
+    systemType: 'FDAS',
+    description: '',
+    status: 'scheduled',
+    scheduledDate: new Date().toISOString().split('T')[0],
+    assignedTechnician: '',
+    priority: 'medium',
+    warrantyExpiry: '',
+    contractRef: '',
+  });
+
+  useEffect(() => {
+    fetchCompanies();
+  }, [fetchCompanies]);
 
   const filtered = tickets.filter(t =>
     (filter === 'all' || t.status === filter) &&
     (typeFilter === 'all' || t.type === typeFilter)
   );
+
+  const handleCreateTicket = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTicket.clientName || !newTicket.description || !newTicket.scheduledDate || !newTicket.assignedTechnician) {
+      alert('Please fill out all required fields.');
+      return;
+    }
+
+    const matchingCompany = companies.find(c => c.name === newTicket.clientName);
+    const clientId = matchingCompany ? matchingCompany.id : `c-${Date.now()}`;
+
+    addTicket({
+      type: newTicket.type as TicketType,
+      clientName: newTicket.clientName,
+      clientId: clientId,
+      systemType: newTicket.systemType as ServiceTicket['systemType'],
+      description: newTicket.description,
+      status: newTicket.status as TicketStatus,
+      scheduledDate: newTicket.scheduledDate,
+      assignedTechnician: newTicket.assignedTechnician,
+      priority: newTicket.priority as ServiceTicket['priority'],
+      warrantyExpiry: newTicket.warrantyExpiry || undefined,
+      contractRef: newTicket.contractRef || undefined,
+    });
+
+    setIsAddModalOpen(false);
+    setNewTicket({
+      type: 'preventive',
+      clientName: '',
+      clientId: '',
+      systemType: 'FDAS',
+      description: '',
+      status: 'scheduled',
+      scheduledDate: new Date().toISOString().split('T')[0],
+      assignedTechnician: '',
+      priority: 'medium',
+      warrantyExpiry: '',
+      contractRef: '',
+    });
+  };
 
   const stats = {
     total: tickets.length,
@@ -39,7 +102,7 @@ const ServiceManagementPage = () => {
             <h1 className="section-title flex items-center gap-3"><Wrench className="text-brand-blue" size={28} /> Service Management</h1>
             <p className="text-sm text-slate-400 -mt-4">Preventive & Corrective Maintenance, Warranty, and Service Reports</p>
           </div>
-          <button className="premium-button flex items-center gap-2"><Plus size={14} /> New Ticket</button>
+          <button onClick={() => setIsAddModalOpen(true)} className="premium-button flex items-center gap-2"><Plus size={14} /> New Ticket</button>
         </div>
 
         {/* Stats */}
@@ -107,6 +170,179 @@ const ServiceManagementPage = () => {
           ))}
         </div>
       </div>
+
+      {/* Create Ticket Modal */}
+      {isAddModalOpen && createPortal(
+        <div className="fixed inset-0 bg-navy-900/40 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
+          <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-surface-border overflow-hidden animate-in">
+            <div className="px-6 py-4 border-b border-surface-border flex items-center justify-between bg-slate-50/50">
+              <div className="flex items-center gap-3">
+                 <div className="p-2 bg-brand-blue text-white rounded-xl shadow-md shadow-brand-blue/15">
+                    <Wrench size={16} />
+                 </div>
+                 <div>
+                    <h2 className="text-sm font-bold text-navy-900 uppercase tracking-widest leading-none">New Service Ticket</h2>
+                    <p className="text-[10px] text-slate-400 mt-1 uppercase tracking-wider mb-0 opacity-80">PMS & CMS Ticket Scheduling</p>
+                 </div>
+              </div>
+              <button 
+                type="button"
+                onClick={() => setIsAddModalOpen(false)}
+                className="p-1.5 hover:bg-white rounded-xl transition-colors text-slate-400 hover:text-navy-900"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <form onSubmit={handleCreateTicket} className="p-6 space-y-4">
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Ticket Type</label>
+                    <select 
+                      value={newTicket.type}
+                      onChange={(e) => setNewTicket({ ...newTicket, type: e.target.value as TicketType })}
+                      className="w-full px-3 py-2 bg-slate-50 border border-surface-border rounded-xl text-xs outline-none focus:ring-2 focus:ring-brand-blue/10 focus:border-brand-blue transition-all cursor-pointer"
+                    >
+                      <option value="preventive">Preventive (PMS)</option>
+                      <option value="corrective">Corrective (CMS)</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Priority</label>
+                    <select 
+                      value={newTicket.priority}
+                      onChange={(e) => setNewTicket({ ...newTicket, priority: e.target.value as ServiceTicket['priority'] })}
+                      className="w-full px-3 py-2 bg-slate-50 border border-surface-border rounded-xl text-xs outline-none focus:ring-2 focus:ring-brand-blue/10 focus:border-brand-blue transition-all cursor-pointer"
+                    >
+                      <option value="low">Low</option>
+                      <option value="medium">Medium</option>
+                      <option value="high">High</option>
+                      <option value="critical">Critical</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Client / Company Name</label>
+                  {companies.length > 0 ? (
+                    <select
+                      value={newTicket.clientName}
+                      onChange={(e) => setNewTicket({ ...newTicket, clientName: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-50 border border-surface-border rounded-xl text-xs outline-none focus:ring-2 focus:ring-brand-blue/10 focus:border-brand-blue transition-all cursor-pointer"
+                      required
+                    >
+                      <option value="">Select a Client...</option>
+                      {companies.map(c => (
+                        <option key={c.id} value={c.name}>{c.name}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input 
+                      type="text" 
+                      required
+                      value={newTicket.clientName}
+                      onChange={(e) => setNewTicket({ ...newTicket, clientName: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-50 border border-surface-border rounded-xl text-xs outline-none focus:ring-2 focus:ring-brand-blue/10 focus:border-brand-blue transition-all"
+                      placeholder="Enter Client Name"
+                    />
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">System Type</label>
+                    <select 
+                      value={newTicket.systemType}
+                      onChange={(e) => setNewTicket({ ...newTicket, systemType: e.target.value as ServiceTicket['systemType'] })}
+                      className="w-full px-3 py-2 bg-slate-50 border border-surface-border rounded-xl text-xs outline-none focus:ring-2 focus:ring-brand-blue/10 focus:border-brand-blue transition-all cursor-pointer"
+                    >
+                      <option value="FDAS">FDAS</option>
+                      <option value="CCTV">CCTV</option>
+                      <option value="Access Control">Access Control</option>
+                      <option value="Networking">Networking</option>
+                      <option value="Structured Cabling">Structured Cabling</option>
+                      <option value="Suppression">Suppression</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Scheduled Date</label>
+                    <input 
+                      type="date" 
+                      required
+                      value={newTicket.scheduledDate}
+                      onChange={(e) => setNewTicket({ ...newTicket, scheduledDate: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-50 border border-surface-border rounded-xl text-xs outline-none focus:ring-2 focus:ring-brand-blue/10 focus:border-brand-blue transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Description / Scope of Work</label>
+                  <textarea 
+                    rows={3}
+                    required
+                    value={newTicket.description}
+                    onChange={(e) => setNewTicket({ ...newTicket, description: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-surface-border rounded-xl text-xs outline-none focus:ring-2 focus:ring-brand-blue/10 focus:border-brand-blue transition-all resize-none"
+                    placeholder="Describe issue or preventative measures..."
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Assigned Technician</label>
+                  <input 
+                    type="text" 
+                    required
+                    value={newTicket.assignedTechnician}
+                    onChange={(e) => setNewTicket({ ...newTicket, assignedTechnician: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-surface-border rounded-xl text-xs outline-none focus:ring-2 focus:ring-brand-blue/10 focus:border-brand-blue transition-all"
+                    placeholder="e.g. Tech. Ramirez"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Warranty Expiry (Optional)</label>
+                    <input 
+                      type="date" 
+                      value={newTicket.warrantyExpiry}
+                      onChange={(e) => setNewTicket({ ...newTicket, warrantyExpiry: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-50 border border-surface-border rounded-xl text-xs outline-none focus:ring-2 focus:ring-brand-blue/10 focus:border-brand-blue transition-all"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Contract Ref (Optional)</label>
+                    <input 
+                      type="text" 
+                      value={newTicket.contractRef}
+                      onChange={(e) => setNewTicket({ ...newTicket, contractRef: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-50 border border-surface-border rounded-xl text-xs outline-none focus:ring-2 focus:ring-brand-blue/10 focus:border-brand-blue transition-all"
+                      placeholder="e.g. CT-2026-0045"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-4 flex gap-3">
+                <button 
+                  type="button"
+                  onClick={() => setIsAddModalOpen(false)}
+                  className="flex-1 py-2.5 px-4 bg-slate-50 text-slate-500 rounded-xl font-bold hover:bg-slate-100 transition-all text-[9px] uppercase tracking-wider border border-slate-200"
+                >
+                  Discard
+                </button>
+                <button 
+                  type="submit"
+                  className="flex-1 py-2.5 px-4 bg-brand-blue text-white rounded-xl font-bold uppercase tracking-wider text-[9px] hover:bg-brand-light transition-all shadow-md shadow-brand-blue/15 active:scale-95"
+                >
+                  Create Ticket
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>,
+        document.body
+      )}
     </AnimatedPage>
   );
 };

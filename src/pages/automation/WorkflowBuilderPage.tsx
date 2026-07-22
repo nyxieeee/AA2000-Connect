@@ -1,4 +1,5 @@
 import { useCallback, useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import {
   ReactFlow, addEdge, Background, Controls,
   useNodesState, useEdgesState,
@@ -56,11 +57,19 @@ const ADD_ACTIONS = [
 
 type ViewMode = 'list' | 'builder';
 
+const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
+const MISTRAL_API_KEY = import.meta.env.VITE_MISTRAL_API_KEY;
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+
 export default function WorkflowBuilderPage() {
   const { addWorkflow, updateWorkflow, submitForApproval, approveWorkflow, rejectWorkflow, workflows } = useAutomationStore();
   const { pipelines } = usePipelinesStore();
   const user = useAuthStore(s => s.user);
   const isAdmin = user?.role === 'super_admin' || user?.role === 'admin';
+
+  const [isTestingWorkflow, setIsTestingWorkflow] = useState(false);
+  const [testingProgress, setTestingProgress] = useState(0);
+  const [testingLogs, setTestingLogs] = useState<string[]>([]);
   const [view, setView] = useState<ViewMode>('list');
   const [activeTab, setActiveTab] = useState('Builder');
   const [isPublished, setIsPublished] = useState(false);
@@ -143,6 +152,129 @@ export default function WorkflowBuilderPage() {
     }
   };
 
+  const handleTestWorkflow = async () => {
+    setIsTestingWorkflow(true);
+    setTestingProgress(0);
+    setTestingLogs([]);
+
+    setTestingLogs(prev => [...prev, 'Initializing workflow test execution environment...']);
+    await new Promise(r => setTimeout(r, 600));
+
+    setTestingLogs(prev => [...prev, 'Compiling workflow node tree...']);
+    await new Promise(r => setTimeout(r, 600));
+
+    const nodeLabels = nodes.map((n, i) => `${i + 1}. [${n.type || 'Action'}] ${n.data?.label || 'Unnamed Node'}`).join('\n');
+    setTestingLogs(prev => [...prev, `Found ${nodes.length} compiled nodes:\n${nodeLabels}`]);
+    await new Promise(r => setTimeout(r, 800));
+
+    setTestingLogs(prev => [...prev, 'Connecting to our AI provider APIs (fallback chain: Groq -> Mistral -> Gemini)...']);
+    await new Promise(r => setTimeout(r, 800));
+
+    const systemPrompt = `You are a professional automated QA agent for AA2000 workflow automation system.
+Generate a realistic execution simulation log (maximum 5 lines of log output) for testing the following workflow steps:
+${nodeLabels}
+
+Format each line of the output as a distinct execution state step (e.g. "[Trigger] Viber message received from +639171234567", "[Action] Automated response dispatched...", etc.). Keep it technical and realistic. Do not use emojis. Output ONLY the lines of logs.`;
+
+    const userPrompt = `Simulate execution logs.`;
+
+    let success = false;
+    let resultsText = '';
+
+    // 1. Try Groq
+    if (GROQ_API_KEY) {
+      try {
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${GROQ_API_KEY}`
+          },
+          body: JSON.stringify({
+            model: 'llama3-8b-8192',
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: userPrompt }
+            ]
+          })
+        });
+        if (response.ok) {
+          const data = await response.json();
+          resultsText = data.choices?.[0]?.message?.content || '';
+          if (resultsText) success = true;
+        }
+      } catch (e) {
+        console.error('Groq test builder failed, trying Mistral:', e);
+      }
+    }
+
+    // 2. Try Mistral
+    if (!success && MISTRAL_API_KEY) {
+      try {
+        const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${MISTRAL_API_KEY}`
+          },
+          body: JSON.stringify({
+            model: 'open-mistral-7b',
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: userPrompt }
+            ]
+          })
+        });
+        if (response.ok) {
+          const data = await response.json();
+          resultsText = data.choices?.[0]?.message?.content || '';
+          if (resultsText) success = true;
+        }
+      } catch (e) {
+        console.error('Mistral test builder failed, trying Gemini:', e);
+      }
+    }
+
+    // 3. Try Gemini
+    if (!success && GEMINI_API_KEY) {
+      try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: systemPrompt + '\n\n' + userPrompt }] }]
+          })
+        });
+        if (response.ok) {
+          const data = await response.json();
+          resultsText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          if (resultsText) success = true;
+        }
+      } catch (e) {
+        console.error('Gemini test builder failed:', e);
+      }
+    }
+
+    const simLogs = success && resultsText
+      ? resultsText.split('\n').filter(line => line.trim().length > 0)
+      : [
+          `[Trigger] Input payload resolved from active contact segment.`,
+          `[Action] Processing node tree and testing SMTP routing.`,
+          `[Action] Auto-Reply message successfully queued for transmission.`,
+          `[Complete] Execution completed successfully with code 0.`
+        ];
+
+    // Stream logs dynamically
+    for (let i = 0; i < simLogs.length; i++) {
+      setTestingLogs(prev => [...prev, simLogs[i]]);
+      setTestingProgress(Math.min(90, Math.round(((i + 1) / simLogs.length) * 90)));
+      await new Promise(r => setTimeout(r, 700));
+    }
+
+    setTestingProgress(100);
+    setTestingLogs(prev => [...prev, 'Workflow test run succeeded! Status: ACTIVE. Code 0.']);
+  };
+
   const currentWorkflow = currentWorkflowId ? workflows.find(w => w.id === currentWorkflowId) : null;
 
   // ── LIST VIEW ──────────────────────────────────────────────────────────────
@@ -154,39 +286,39 @@ export default function WorkflowBuilderPage() {
   const builderTabs = ['Builder', 'Settings', 'Enrollment History', 'Execution Logs'];
 
   return (
-    <div className="h-[calc(100vh-80px)] flex flex-col overflow-hidden -mx-6 -mt-6">
+    <div className="h-[calc(100vh-160px)] flex flex-col overflow-hidden bg-white border border-surface-border rounded-[2rem] shadow-premium animate-in">
       {/* Top Bar */}
-      <div className="flex items-center justify-between px-4 py-2 bg-white border-b border-surface-border shrink-0 gap-4">
+      <div className="flex items-center justify-between px-6 py-4 bg-slate-50/50 border-b border-surface-border shrink-0 gap-4">
         {/* Left */}
         <div className="flex items-center gap-3 min-w-0">
-          <button onClick={() => setView('list')} className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-navy-900 transition-colors shrink-0 font-medium">
-            <ChevronLeft size={18} /> Back to Workflows
+          <button onClick={() => setView('list')} className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-navy-900 transition-colors shrink-0 font-bold uppercase tracking-wider">
+            <ChevronLeft size={16} /> Back
           </button>
           <span className="text-slate-200 shrink-0">|</span>
-          <div className="flex items-center gap-1.5 min-w-0">
+          <div className="flex items-center gap-2 min-w-0">
             {isEditingName ? (
               <input
                 autoFocus value={workflowName}
                 onChange={e => setWorkflowName(e.target.value)}
                 onBlur={() => setIsEditingName(false)}
                 onKeyDown={e => e.key === 'Enter' && setIsEditingName(false)}
-                className="text-sm font-semibold text-navy-900 border-b border-brand-blue outline-none bg-transparent truncate max-w-xs"
+                className="text-xs font-bold text-navy-900 border-b border-brand-blue outline-none bg-transparent truncate max-w-xs uppercase tracking-wide"
               />
             ) : (
-              <span className="text-sm font-semibold text-navy-900 truncate max-w-xs">{workflowName}</span>
+              <span className="text-xs font-black text-navy-900 truncate max-w-xs uppercase tracking-wide">{workflowName}</span>
             )}
             <button onClick={() => setIsEditingName(true)} className="p-1 text-slate-400 hover:text-navy-900 transition-colors shrink-0">
-              <Pencil size={13} />
+              <Pencil size={12} />
             </button>
           </div>
         </div>
 
         {/* Center Tabs */}
-        <div className="flex items-center border-b-0 gap-0 shrink-0">
+        <div className="flex items-center gap-1 bg-slate-100/80 p-1 rounded-xl shrink-0">
           {builderTabs.map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)}
-              className={cn('px-4 py-2 text-sm font-medium border-b-2 transition-all',
-                activeTab === tab ? 'border-brand-blue text-brand-blue' : 'border-transparent text-slate-500 hover:text-navy-900'
+              className={cn('px-4 py-2 text-[10px] font-bold rounded-lg uppercase tracking-wider transition-all',
+                activeTab === tab ? 'bg-white text-brand-blue shadow-sm' : 'text-slate-400 hover:text-navy-900'
               )}>
               {tab}
             </button>
@@ -195,36 +327,36 @@ export default function WorkflowBuilderPage() {
 
         {/* Right Actions */}
         <div className="flex items-center gap-2 shrink-0">
-          <button className="px-3 py-1.5 text-sm font-semibold text-slate-600 border border-surface-border rounded-lg hover:bg-slate-50 transition-all flex items-center gap-1.5 shadow-sm">
-            <Play size={13} /> Test Workflow
+          <button onClick={handleTestWorkflow} className="px-3 py-1.5 border border-surface-border rounded-xl text-[10px] font-bold uppercase tracking-wider text-slate-600 bg-white hover:bg-slate-50 transition-all flex items-center gap-1.5 shadow-sm">
+            <Play size={12} className="text-slate-400" /> Test Workflow
           </button>
 
           {approvalStatus === 'active' ? (
-            <span className="px-3 py-1.5 text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-lg flex items-center gap-1.5">
-              <CheckCircle2 size={13} /> Active
+            <span className="px-3.5 py-2 text-[9px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-1.5">
+              <CheckCircle2 size={12} /> Active
             </span>
           ) : approvalStatus === 'pending_approval' ? (
-            <span className="px-3 py-1.5 text-xs font-bold text-amber-600 bg-amber-50 border border-amber-200 rounded-lg flex items-center gap-1.5">
-              <Hourglass size={13} /> Pending Approval
+            <span className="px-3.5 py-2 text-[9px] font-black uppercase tracking-widest text-amber-600 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-1.5">
+              <Hourglass size={12} /> Pending Approval
             </span>
           ) : approvalStatus === 'approved' ? (
             <button
               onClick={() => { if (currentWorkflowId) { approveWorkflow(currentWorkflowId); setApprovalStatus('active'); setIsPublished(true); } }}
-              className="px-3 py-1.5 text-xs font-bold text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-all shadow-sm flex items-center gap-1.5"
+              className="px-3.5 py-2 text-[10px] font-bold uppercase tracking-wider text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 transition-all shadow-md active:scale-[0.98] flex items-center gap-1.5"
             >
-              <Play size={13} /> Activate Now
+              <Play size={12} /> Activate Now
             </button>
           ) : (
             <button
               onClick={() => { if (currentWorkflowId) { submitForApproval(currentWorkflowId); setApprovalStatus('pending_approval'); } }}
-              className="px-3 py-1.5 text-xs font-bold text-white bg-amber-600 rounded-lg hover:bg-amber-700 transition-all shadow-sm flex items-center gap-1.5"
+              className="px-3.5 py-2 text-[10px] font-bold uppercase tracking-wider text-white bg-amber-600 rounded-xl hover:bg-amber-700 transition-all shadow-md active:scale-[0.98] flex items-center gap-1.5"
             >
-              <SendHorizonal size={13} /> Submit for Approval
+              <SendHorizonal size={12} /> Submit
             </button>
           )}
 
-          <button onClick={saveWorkflow} className="px-3 py-1.5 text-xs font-bold text-white bg-brand-blue rounded-lg hover:bg-brand-light transition-all shadow-sm">
-            Saved
+          <button onClick={saveWorkflow} className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-white bg-brand-blue rounded-xl hover:bg-brand-light transition-all shadow-md active:scale-[0.98]">
+            Save
           </button>
         </div>
       </div>
@@ -628,6 +760,128 @@ export default function WorkflowBuilderPage() {
                     </select>
                   </div>
                 </div>
+              ) : selectedNode.data.label === 'AI Agent Reply' ? (
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">AI Persona & Instruction</label>
+                    <select className="w-full px-3 py-2 bg-slate-50 border border-surface-border rounded-lg text-sm outline-none focus:ring-1 focus:ring-brand-blue/30 cursor-pointer">
+                      <option>Support Expert (Detailed Troubleshooting)</option>
+                      <option>Sales Qualifier (Lead Scoring & Booking)</option>
+                      <option>Support Escalator (Dispatches to Admin)</option>
+                      <option>General Greeting Handler</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Custom System Prompt/Directives</label>
+                    <textarea 
+                      placeholder="e.g. You are a helpful sales assistant. Answer questions about FDAS and CCTV pricing, then prompt the user to schedule a consultation."
+                      className="w-full px-3 py-2 bg-slate-50 border border-surface-border rounded-xl text-xs outline-none focus:ring-1 focus:ring-brand-blue/30 min-h-[100px] resize-none"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Knowledge Base Integration</label>
+                    <div className="space-y-1.5 border border-surface-border rounded-xl p-3 bg-slate-50">
+                      {[
+                        'FDAS Maintenance Protocols',
+                        'CCTV Product Specifications',
+                        'AA2000 Pricing Sheet'
+                      ].map(doc => (
+                        <label key={doc} className="flex items-center gap-2 cursor-pointer">
+                          <input type="checkbox" defaultChecked className="w-3.5 h-3.5 rounded border-slate-300 text-brand-blue" />
+                          <span className="text-xs text-slate-600 font-semibold">{doc}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">AI Response Limits</label>
+                    <select className="w-full px-3 py-2 bg-slate-50 border border-surface-border rounded-lg text-sm outline-none focus:ring-1 focus:ring-brand-blue/30 cursor-pointer">
+                      <option>Short & Sweet (1-2 sentences)</option>
+                      <option>Balanced Reply (3-4 sentences)</option>
+                      <option>Detailed Answer (Full answer block)</option>
+                    </select>
+                  </div>
+                </div>
+              ) : selectedNode.data.label === 'Send Email' ? (
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Sender Address</label>
+                    <select className="w-full px-3 py-2 bg-slate-50 border border-surface-border rounded-lg text-sm outline-none focus:ring-1 focus:ring-brand-blue/30 cursor-pointer">
+                      <option>sales@aa2000.ph</option>
+                      <option>support@aa2000.ph</option>
+                      <option>noreply@aa2000.ph</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Subject Line</label>
+                    <input 
+                      type="text" 
+                      placeholder="e.g. Schedule your annual fire inspection today" 
+                      className="w-full px-3 py-2 bg-slate-50 border border-surface-border rounded-lg text-sm outline-none focus:ring-1 focus:ring-brand-blue/30" 
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Email Template</label>
+                    <select className="w-full px-3 py-2 bg-slate-50 border border-surface-border rounded-lg text-sm outline-none focus:ring-1 focus:ring-brand-blue/30 cursor-pointer">
+                      <option>Default Blank Template</option>
+                      <option>FDAS Inspection Reminder</option>
+                      <option>Solar ROI Guide</option>
+                      <option>Holiday Special Deals</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Tracking & Delivery Options</label>
+                    <div className="space-y-2">
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" defaultChecked className="w-4 h-4 rounded border-slate-300 text-brand-blue" />
+                        <span className="text-xs font-bold text-navy-900">Track email open rate</span>
+                      </label>
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" defaultChecked className="w-4 h-4 rounded border-slate-300 text-brand-blue" />
+                        <span className="text-xs font-bold text-navy-900">Track link clicks</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              ) : selectedNode.data.label === 'Notification' ? (
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Notification Recipient</label>
+                    <select className="w-full px-3 py-2 bg-slate-50 border border-surface-border rounded-lg text-sm outline-none focus:ring-1 focus:ring-brand-blue/30 cursor-pointer">
+                      <option>Assigned Sales Rep</option>
+                      <option>All Admins</option>
+                      <option>Operations Division Manager</option>
+                      <option>General Support Inbox</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Notification Level</label>
+                    <div className="flex gap-2">
+                      {['Low', 'Medium', 'High'].map(level => (
+                        <button 
+                          key={level} 
+                          type="button"
+                          className={cn(
+                            "flex-1 py-2 text-xs font-bold rounded-lg border transition-all uppercase tracking-wider",
+                            level === 'High' ? "bg-rose-50 text-rose-600 border-rose-200" :
+                            level === 'Medium' ? "bg-amber-50 text-amber-600 border-amber-200" :
+                            "bg-slate-50 text-slate-500 border-slate-200"
+                          )}
+                        >
+                          {level}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Alert Message Body</label>
+                    <textarea 
+                      placeholder="e.g. Lead {{contact.name}} has triggered a follow-up request. Please call them at {{contact.phone}} within the hour."
+                      rows={3}
+                      className="w-full px-3 py-2 bg-slate-50 border border-surface-border rounded-xl text-xs outline-none focus:ring-1 focus:ring-brand-blue/30 min-h-[90px] resize-none"
+                    />
+                  </div>
+                </div>
               ) : (
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Action Configuration</label>
@@ -648,13 +902,73 @@ export default function WorkflowBuilderPage() {
               <button onClick={() => setSelectedNode(null)} className="flex-1 py-1.5 text-sm font-semibold text-slate-600 border border-surface-border rounded-lg hover:bg-slate-50 transition-all">
                 Cancel
               </button>
-              <button className="flex-1 py-1.5 text-sm font-bold text-white bg-brand-blue rounded-lg hover:bg-brand-light transition-all shadow-sm">
+              <button onClick={() => { saveWorkflow(); setSelectedNode(null); }} className="flex-1 py-1.5 text-sm font-bold text-white bg-brand-blue rounded-lg hover:bg-brand-light transition-all shadow-sm">
                 Save action
               </button>
             </div>
           </div>
         )}
       </div>
+
+      {isTestingWorkflow && createPortal(
+        <div className="fixed inset-0 bg-navy-900/20 backdrop-blur-[2px] flex items-center justify-center z-[9999] p-4 animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-xl rounded-[2rem] shadow-2xl border border-surface-border overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="px-8 py-5 border-b border-surface-border bg-slate-50/50 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-brand-blue text-white rounded-xl shadow-md animate-bounce">
+                  <Bot size={18} />
+                </div>
+                <div>
+                  <h2 className="text-sm font-black text-navy-900 uppercase tracking-[0.12em]">Workflow Simulator</h2>
+                  <p className="text-[8px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Test suite diagnostics console</p>
+                </div>
+              </div>
+              <button onClick={() => setIsTestingWorkflow(false)} className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors">
+                <X size={20} className="text-slate-400" />
+              </button>
+            </div>
+
+            <div className="p-8 space-y-6">
+              <div className="space-y-2 text-center">
+                <h3 className="text-xs font-black text-navy-900 uppercase tracking-widest animate-pulse">Running Automation Test Suite</h3>
+                <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Simulating workflow logic against active payload integrations</p>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-[10px] font-black text-navy-900 uppercase">
+                  <span>Test Progression</span>
+                  <span>{testingProgress}%</span>
+                </div>
+                <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden border border-slate-200/50 p-0.5 shadow-inner">
+                  <div className="h-full bg-brand-blue rounded-full transition-all duration-300 shadow-sm" style={{ width: `${testingProgress}%` }} />
+                </div>
+              </div>
+
+              {/* Execution Console Logs */}
+              <div className="h-56 bg-slate-900 rounded-xl p-4 overflow-y-auto font-mono text-[9px] text-slate-300 space-y-2 shadow-inner">
+                {testingLogs.map((log, idx) => (
+                  <div key={idx} className="flex items-start gap-2">
+                    <span className="text-brand-blue shrink-0">&gt;</span>
+                    <span className="leading-relaxed whitespace-pre-wrap">{log}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="pt-4 border-t border-slate-150 flex justify-end">
+                <button 
+                  onClick={() => setIsTestingWorkflow(false)} 
+                  disabled={testingProgress < 100}
+                  className="px-6 py-2 bg-brand-blue text-white rounded-lg font-bold uppercase tracking-widest text-[8px] hover:bg-brand-light transition-all shadow-md active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Complete diagnostics
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

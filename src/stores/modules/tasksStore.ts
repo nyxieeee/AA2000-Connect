@@ -23,11 +23,31 @@ interface TasksStore {
   generateRecurringTasks: () => void;
 }
 
+const getUniqueTasks = (): TaskItem[] => {
+  const loaded = storage.get<TaskItem[]>('module_tasks') || [];
+  const seenIds = new Set<string>();
+  let hasDuplicates = false;
+  
+  const deduplicated = loaded.map(t => {
+    if (!t.id || seenIds.has(t.id)) {
+      hasDuplicates = true;
+      return { ...t, id: `task-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` };
+    }
+    seenIds.add(t.id);
+    return t;
+  });
+  
+  if (hasDuplicates) {
+    storage.set('module_tasks', deduplicated);
+  }
+  return deduplicated;
+};
+
 export const useTasksStore = create<TasksStore>((set, get) => ({
-  tasks: storage.get<TaskItem[]>('module_tasks') || [],
-  fetchTasks: () => { const tasks = storage.get<TaskItem[]>('module_tasks') || []; set({ tasks }); },
+  tasks: getUniqueTasks(),
+  fetchTasks: () => { set({ tasks: getUniqueTasks() }); },
   addTask: (data) => {
-    const newTask: TaskItem = { ...data, id: `task-${Date.now()}`, createdAt: new Date().toISOString() };
+    const newTask: TaskItem = { ...data, id: `task-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`, createdAt: new Date().toISOString() };
     const updated = [...get().tasks, newTask];
     storage.set('module_tasks', updated); set({ tasks: updated });
   },

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   Plus, 
   Search, 
@@ -254,11 +255,11 @@ const CompaniesListPage = () => {
       </AnimatedList>
 
       {/* Add Company Modal */}
-      {isAddModalOpen && (
-        <div className="fixed inset-0 bg-navy-900/40 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+      {isAddModalOpen && createPortal(
+        <div className="fixed inset-0 bg-navy-900/30 backdrop-blur-[2px] flex items-center justify-center z-[200] p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-              <h2 className="text-xl font-bold text-navy-900">Add New Account</h2>
+            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+              <h2 className="text-lg font-bold text-navy-900">Add New Account</h2>
               <button onClick={() => setIsAddModalOpen(false)} className="p-2 hover:bg-white rounded-full transition-colors">
                 <X size={20} className="text-slate-400" />
               </button>
@@ -342,14 +343,14 @@ const CompaniesListPage = () => {
             </div>
           </div>
         </div>
-      )}
+      , document.body)}
 
       {/* Edit Company Modal */}
-      {isEditModalOpen && editingCompany && (
-        <div className="fixed inset-0 bg-navy-900/40 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+      {isEditModalOpen && editingCompany && createPortal(
+        <div className="fixed inset-0 bg-navy-900/30 backdrop-blur-[2px] flex items-center justify-center z-[200] p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-              <h2 className="text-xl font-bold text-navy-900">Edit Account</h2>
+            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+              <h2 className="text-lg font-bold text-navy-900">Edit Account</h2>
               <button onClick={() => setIsEditModalOpen(false)} className="p-2 hover:bg-white rounded-full transition-colors">
                 <X size={20} className="text-slate-400" />
               </button>
@@ -431,7 +432,7 @@ const CompaniesListPage = () => {
             </div>
           </div>
         </div>
-      )}
+      , document.body)}
     </AnimatedPage>
   );
 };

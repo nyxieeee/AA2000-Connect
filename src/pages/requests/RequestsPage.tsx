@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Trash2, ClipboardList, Search, AlertTriangle, User, Phone, Mail, Globe, MessageCircle } from 'lucide-react';
+import { Plus, Trash2, ClipboardList, Search, AlertTriangle, User, Phone, Mail, Globe, MessageCircle, Sparkles, Loader2, X } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { useRequestsStore } from '../../stores/modules/requestsStore';
 import { AnimatedPage, AnimatedList, AnimatedListItem } from '../../components/ui/AnimatedPage';
@@ -36,9 +36,19 @@ const sourceIcons: Record<string, any> = {
   manual: User,
 };
 
+const MISTRAL_API_KEY = import.meta.env.VITE_MISTRAL_API_KEY;
+const MISTRAL_API_URL = 'https://api.mistral.ai/v1/chat/completions';
+
 export default function RequestsPage() {
   const { requests, addRequest, updateRequest, deleteRequest } = useRequestsStore();
   const [showForm, setShowForm] = useState(false);
+  const [showTriage, setShowTriage] = useState(false);
+  const [triageInput, setTriageInput] = useState('');
+  const [triageLoading, setTriageLoading] = useState(false);
+  const [triagePreview, setTriagePreview] = useState<{
+    subject: string; type: string; priority: string; companyName: string; description: string; slaDays: number;
+  } | null>(null);
+
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [form, setForm] = useState<{
@@ -71,6 +81,107 @@ export default function RequestsPage() {
     resetForm(); setShowForm(false);
   };
 
+  const handleTriage = async () => {
+    if (!triageInput.trim()) return;
+    setTriageLoading(true);
+    setTriagePreview(null);
+
+    if (MISTRAL_API_KEY) {
+      try {
+        const response = await fetch(MISTRAL_API_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${MISTRAL_API_KEY}`
+          },
+          body: JSON.stringify({
+            model: 'open-mistral-nemo',
+            response_format: { type: 'json_object' },
+            messages: [
+              {
+                role: 'system',
+                content: `You are an expert AI triage assistant for AA2000, a low-voltage and security systems company in the Philippines.
+Your task is to parse raw client requests/emails/transcripts and return a clean JSON object.
+
+Allowed values:
+- type: "service" | "support" | "inquiry" | "complaint" | "internal" (Select the most appropriate)
+- priority: "low" | "medium" | "high" | "urgent" (Assess priority based on description)
+- slaDays: number (Choose: 1 for urgent, 3 for high, 5 for medium, 7 for low)
+
+JSON format:
+{
+  "subject": "Short, concise description of the issue (Max 8 words)",
+  "type": "service" | "support" | "inquiry" | "complaint",
+  "priority": "low" | "medium" | "high" | "urgent",
+  "companyName": "Extracted client or company name (or leave empty string)",
+  "description": "Cleaned up and summarized details of the issue",
+  "slaDays": 3
+}`
+              },
+              {
+                role: 'user',
+                content: triageInput
+              }
+            ]
+          })
+        });
+
+        if (!response.ok) throw new Error("Mistral request failed");
+        const data = await response.json();
+        const content = JSON.parse(data.choices[0].message.content);
+
+        setTriagePreview({
+          subject: content.subject || '',
+          type: content.type || 'service',
+          priority: content.priority || 'medium',
+          companyName: content.companyName || '',
+          description: content.description || '',
+          slaDays: content.slaDays || 3
+        });
+        setTriageLoading(false);
+        return;
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    // Simulation Fallback Mode
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    const inputLower = triageInput.toLowerCase();
+    let type = 'support';
+    let priority = 'medium';
+    let slaDays = 5;
+
+    if (inputLower.includes('cctv') || inputLower.includes('fire') || inputLower.includes('fdas') || inputLower.includes('lock')) {
+      type = 'service';
+    } else if (inputLower.includes('price') || inputLower.includes('quotation') || inputLower.includes('how much')) {
+      type = 'inquiry';
+    } else if (inputLower.includes('angry') || inputLower.includes('terrible') || inputLower.includes('broken') || inputLower.includes('delay')) {
+      type = 'complaint';
+    }
+
+    if (inputLower.includes('urgent') || inputLower.includes('immediately') || inputLower.includes('now') || inputLower.includes('emergency') || inputLower.includes('down')) {
+      priority = 'urgent';
+      slaDays = 1;
+    } else if (inputLower.includes('high') || inputLower.includes('soon')) {
+      priority = 'high';
+      slaDays = 3;
+    }
+
+    const companyMatch = triageInput.match(/(?:from|at)\s+([A-Z][a-zA-Z0-9\s&]{2,30}(?:Corp|Inc|Ltd|Company|Holdings|Government|Govt)?)/);
+    const company = companyMatch ? companyMatch[1].trim() : 'Identified Client';
+
+    setTriagePreview({
+      subject: triageInput.split('\n')[0].substring(0, 50) || 'AI Parsed Support Ticket',
+      type,
+      priority,
+      companyName: company,
+      description: triageInput,
+      slaDays
+    });
+    setTriageLoading(false);
+  };
+
   const breachCount = requests.filter(r => r.status !== 'resolved' && r.status !== 'closed' && r.slaDueAt && new Date(r.slaDueAt) < new Date()).length;
 
   return (
@@ -81,9 +192,14 @@ export default function RequestsPage() {
           <h1 className="text-2xl font-bold text-navy-900 tracking-tight">PMS & CMS</h1>
           <p className="text-xs text-slate-500 mt-0.5">Log and track preventive & corrective maintenance jobs from intake to completion</p>
         </div>
-        <button onClick={() => { resetForm(); setShowForm(true); }} className="px-4 py-2 bg-brand-blue text-white rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-brand-light transition-all shadow-sm">
-          <Plus size={16} /> New Request
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => { setShowTriage(!showTriage); setShowForm(false); setTriagePreview(null); }} className="px-4 py-2 bg-white border border-surface-border text-slate-700 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-slate-50 transition-all shadow-sm">
+            <Sparkles size={16} className="text-brand-blue" /> AI Triage
+          </button>
+          <button onClick={() => { resetForm(); setShowForm(true); setShowTriage(false); }} className="px-4 py-2 bg-brand-blue text-white rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-brand-light transition-all shadow-sm">
+            <Plus size={16} /> New Request
+          </button>
+        </div>
       </div>
 
       {/* Stats */}
@@ -109,6 +225,155 @@ export default function RequestsPage() {
         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
         <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search requests..." className="w-full pl-9 pr-4 py-2 bg-white border border-surface-border rounded-xl text-sm outline-none focus:ring-2 focus:ring-brand-blue/10" />
       </div>
+
+      {showTriage && (
+        <div className="glass-card p-5 space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <h3 className="text-xs font-bold text-navy-900 uppercase tracking-wider flex items-center gap-2">
+              <Sparkles size={14} className="text-brand-blue animate-pulse" />
+              Mistral AI Ticket Triage
+            </h3>
+            <button onClick={() => { setShowTriage(false); setTriagePreview(null); }} className="text-slate-400 hover:text-slate-600">
+              <X size={14} />
+            </button>
+          </div>
+          
+          {!triagePreview && (
+            <div className="space-y-3">
+              <p className="text-xs text-slate-500">Paste a raw customer email, chat transcript, or incident notes. Mistral AI will automatically identify the category, priority, client name, and set the appropriate SLA timeline.</p>
+              <textarea 
+                value={triageInput} 
+                onChange={e => setTriageInput(e.target.value)}
+                placeholder="Example: 'Hi AA2000, our lobby CCTV feed is down. The access control reader is also not scanning cards. This is extremely urgent as customers cannot enter. Requesting a technician today - Ben Cruz, City Plaza Corp.'" 
+                rows={5} 
+                className="w-full px-4 py-3 bg-slate-50 border border-surface-border rounded-xl text-xs outline-none resize-none focus:ring-2 focus:ring-brand-blue/10" 
+              />
+              <div className="flex justify-end gap-2">
+                <button 
+                  onClick={handleTriage} 
+                  disabled={triageLoading || !triageInput.trim()}
+                  className="px-4 py-2.5 bg-brand-blue text-white rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-brand-light transition-all shadow-sm disabled:opacity-50"
+                >
+                  {triageLoading ? (
+                    <>
+                      <Loader2 size={12} className="animate-spin" /> Triaging...
+                    </>
+                  ) : (
+                    <>Run AI Triage</>
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {triagePreview && (
+            <div className="space-y-4">
+              <div className="bg-brand-blue/5 border border-brand-blue/10 rounded-2xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold text-brand-blue uppercase tracking-wider">AI Classification Results</span>
+                  <span className="text-[9px] text-slate-400">Model: open-mistral-nemo</span>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[9px] font-bold text-slate-400 uppercase">Subject</label>
+                    <input 
+                      value={triagePreview.subject} 
+                      onChange={e => setTriagePreview({ ...triagePreview, subject: e.target.value })}
+                      className="w-full mt-1 px-3 py-1.5 bg-white border border-surface-border rounded-lg text-xs outline-none" 
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-bold text-slate-400 uppercase">Company Name</label>
+                    <input 
+                      value={triagePreview.companyName} 
+                      onChange={e => setTriagePreview({ ...triagePreview, companyName: e.target.value })}
+                      className="w-full mt-1 px-3 py-1.5 bg-white border border-surface-border rounded-lg text-xs outline-none" 
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-bold text-slate-400 uppercase block">Type</label>
+                    <select 
+                      value={triagePreview.type} 
+                      onChange={e => setTriagePreview({ ...triagePreview, type: e.target.value })}
+                      className="w-full mt-1 px-3 py-1.5 bg-white border border-surface-border rounded-lg text-xs outline-none"
+                    >
+                      {Object.entries(typeLabels).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-bold text-slate-400 uppercase block">Priority</label>
+                    <select 
+                      value={triagePreview.priority} 
+                      onChange={e => setTriagePreview({ ...triagePreview, priority: e.target.value })}
+                      className="w-full mt-1 px-3 py-1.5 bg-white border border-surface-border rounded-lg text-xs outline-none"
+                    >
+                      <option value="low">Low</option>
+                      <option value="medium">Medium</option>
+                      <option value="high">High</option>
+                      <option value="urgent">Urgent</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[9px] font-bold text-slate-400 uppercase">Cleaned Description</label>
+                  <textarea 
+                    value={triagePreview.description} 
+                    onChange={e => setTriagePreview({ ...triagePreview, description: e.target.value })}
+                    rows={3}
+                    className="w-full mt-1 px-3 py-2 bg-white border border-surface-border rounded-lg text-xs outline-none resize-none" 
+                  />
+                </div>
+
+                <div className="text-[10px] text-slate-400 font-medium">
+                  SLA Target: <span className="font-bold text-navy-900">{triagePreview.slaDays} days</span> from now
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <button 
+                  onClick={() => setTriagePreview(null)}
+                  className="text-xs font-semibold text-slate-500 hover:text-slate-700"
+                >
+                  ← Retry Triage
+                </button>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => { setShowTriage(false); setTriagePreview(null); }}
+                    className="px-3 py-2 text-xs font-semibold text-slate-500 hover:text-slate-700"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={() => {
+                      const slaDate = new Date(Date.now() + (triagePreview.slaDays || 3) * 24 * 3600000).toISOString().split('T')[0];
+                      addRequest({
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        type: triagePreview.type as any,
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        priority: triagePreview.priority as any,
+                        subject: triagePreview.subject,
+                        description: triagePreview.description || undefined,
+                        companyName: triagePreview.companyName || undefined,
+                        source: 'manual',
+                        status: 'new',
+                        slaBreached: false,
+                        slaDueAt: slaDate
+                      });
+                      setShowTriage(false);
+                      setTriagePreview(null);
+                    }}
+                    className="px-4 py-2 bg-brand-blue text-white rounded-xl text-xs font-bold hover:bg-brand-light transition-all shadow-sm"
+                  >
+                    Approve & Create Request
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {showForm && (
         <div className="glass-card p-5 space-y-3">

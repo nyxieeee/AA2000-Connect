@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Shield, Users, Palette, Key, Globe, MessageCircle, MessageSquare, Smartphone, Video, Layout, Cloud, Save, Search, Trash2, Plus } from 'lucide-react';
+import { Shield, Users, Palette, Key, Globe, MessageCircle, MessageSquare, Smartphone, Video, Layout, Cloud, Save, Search, Trash2, Plus, Lock } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { useAuthStore } from '../../stores/authStore';
 import { AnimatedPage } from '../../components/ui/AnimatedPage';
@@ -248,7 +248,7 @@ export default function AdminPanelPage() {
               </div>
               <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400 font-mono">
                 <span>Key: {item.envVar}</span>
-                <span className="font-semibold text-navy-900 uppercase text-[8px]">🔐 IT Configured</span>
+                <span className="font-semibold text-navy-900 uppercase text-[8px] flex items-center gap-1"><Lock size={8} /> IT Configured</span>
               </div>
             </div>
           ))}

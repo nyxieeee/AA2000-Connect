@@ -20,6 +20,8 @@ interface GroundedProductResult {
   is_trusted: boolean;
 }
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
+const MISTRAL_API_KEY = import.meta.env.VITE_MISTRAL_API_KEY;
 
 const renderCleanSpecs = (text: string) => {
   if (!text) return null;
@@ -92,6 +94,16 @@ const ProductSearchPage = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [webResults, setWebResults] = useState<GroundedProductResult[]>([]);
   const [aiResponseText, setAiResponseText] = useState('');
+  const [provider, setProvider] = useState<'gemini' | 'groq' | 'mistral'>(() => {
+    const val = localStorage.getItem('search_active_provider');
+    if (val === 'gemini' || val === 'groq' || val === 'mistral') return val;
+    return 'gemini';
+  });
+
+  const handleProviderChange = (p: 'gemini' | 'groq' | 'mistral') => {
+    setProvider(p);
+    localStorage.setItem('search_active_provider', p);
+  };
 
   const filtered = useMemo(() => {
     return products.filter(p => {
@@ -121,11 +133,175 @@ const ProductSearchPage = () => {
 
     setIsSearching(true);
     setAiResponseText('');
+
+    const activeKey = provider === 'gemini' ? GEMINI_API_KEY : provider === 'mistral' ? MISTRAL_API_KEY : GROQ_API_KEY;
+    const activeKeyVar = provider === 'gemini' ? 'VITE_GEMINI_API_KEY' : provider === 'mistral' ? 'VITE_MISTRAL_API_KEY' : 'VITE_GROQ_API_KEY';
+
+    if (!activeKey) {
+      await new Promise(r => setTimeout(r, 1000 + Math.random() * 1000));
+      
+      const q = webQuery.toLowerCase();
+      let answer: string;
+      let mockChunks: GroundedProductResult[];
+
+      if (q.includes('cctv') || q.includes('camera') || q.includes('dome') || q.includes('hikvision') || q.includes('dahua')) {
+        answer = 'Hikvision and Dahua offer a range of premium CCTV solutions. The Hikvision DS-2CD2143G0-I Dome Camera features a 4MP resolution, 2.8mm fixed lens, IP67 weatherproof rating, IK10 vandal protection, and 30m IR range. Dahua\'s IPC-HFW1431S features comparable 4MP output with smart H.265+ compression, PoE support, and motion detection.';
+        mockChunks = [
+          {
+            id: `mock-spec-1`,
+            title: 'Hikvision DS-2CD2143G0-I Datasheet Specs',
+            description: '4MP Dome Network Camera, 2.8 mm lens, IP67 weatherproof, IK10 vandal-proof, H.265+, 120dB WDR, 30 meters infrared range, PoE support.',
+            source: 'hikvision.com',
+            url: 'https://www.hikvision.com/en/products/IP-Products/Network-Cameras/Pro-Series-EasyIP-/ds-2cd2143g0-i/',
+            category: 'OEM / Vendor Site',
+            is_trusted: true
+          },
+          {
+            id: `mock-spec-2`,
+            title: 'Dahua IPC-HFW1431S 4MP Entry-Level Specs',
+            description: '4MP IR Mini-Bullet Camera, Smart H.265+ encoding, IP67 protection, PoE support, max 30m IR distance, smart motion detection.',
+            source: 'dahuasecurity.com',
+            url: 'https://www.dahuasecurity.com/products/All-Products/Network-Cameras/Lite-Series/4MP/IPC-HFW1431S',
+            category: 'OEM / Vendor Site',
+            is_trusted: true
+          }
+        ];
+      } else if (q.includes('fire') || q.includes('alarm') || q.includes('smoke') || q.includes('edwards') || q.includes('fdas')) {
+        answer = 'Edwards and Honeywell are top fire alarm (FDAS) vendors. The Edwards EST3 features a modular design for medium to large facilities, supporting up to 2,500 addressable points. Honeywell\'s Morley-IAS Lite is ideal for smaller configurations, supporting 1 loop and up to 126 addressable devices.';
+        mockChunks = [
+          {
+            id: `mock-spec-3`,
+            title: 'Edwards EST3 Intelligent Life Safety System',
+            description: 'Modular fire alarm control panel supporting addressable networks, audio paging, smoke detection sensors, and UL 864 compliance guidelines.',
+            source: 'edwardsfiresafety.com',
+            url: 'https://www.edwardsfiresafety.com/EST3-life-safety-panel-specs',
+            category: 'Datasheet / Manual',
+            is_trusted: true
+          }
+        ];
+      } else if (q.includes('switch') || q.includes('network') || q.includes('ruijie')) {
+        answer = 'Ruijie Networks provides reliable enterprise switches. The Ruijie RG-ES205GC is a 5-Port Gigabit Smart Managed Switch supporting PoE+ power output, VLAN grouping, loops prevention, and unified cloud monitoring tools.';
+        mockChunks = [
+          {
+            id: `mock-spec-4`,
+            title: 'Ruijie Reyee RG-ES200 Series Smart Switch Datasheet',
+            description: '5-Port gigabit desktop smart switch, 4 PoE+ ports with 54W budget, smart network topology detection, and web-based portal management.',
+            source: 'ruijienetworks.com',
+            url: 'https://www.ruijienetworks.com/products/reyee-switch/smart-managed-switch/RG-ES200-Series',
+            category: 'Manufacturer Guide',
+            is_trusted: true
+          }
+        ];
+      } else {
+        answer = `Found general specifications matching "${webQuery}". AA2000 coordinates low-voltage installations including security cameras, fire alarms, intercoms, door locks, and structured cabling. All hardware adheres to standard engineering specifications.`;
+        mockChunks = [
+          {
+            id: `mock-spec-5`,
+            title: 'AA2000 Standard Low-Voltage Hardware Spec Guideline',
+            description: 'General specification thresholds for fire-rated cables, copper wiring, CAT6 interfaces, and standard hardware layouts.',
+            source: 'aa2000.com.ph',
+            url: 'https://aa2000.com.ph/specs-catalog',
+            category: 'Product Specification',
+            is_trusted: true
+          }
+        ];
+      }
+
+      setAiResponseText(answer + `\n\n*(Note: Operating in Offline Simulation Mode. To enable live ${provider} queries, please configure ${activeKeyVar} in your local .env file)*`);
+      setWebResults(mockChunks);
+      setIsSearching(false);
+      return;
+    }
+
     const systemPrompt = `
       You are an expert product specialist for AA2000 fire protection, CCTV, network engineering, and alarm devices.
       Provide precise technical specifications, compatibility notes, and datasheet details for security cameras, alarm systems, networking hardware, fire alarm systems, and components.
       Always retrieve and cite evidence-based, trusted vendor sources (e.g., Hikvision, Dahua, Ajax, Edwards, Bosch, Honeywell, Ruijie).
     `;
+
+    if (provider === 'groq') {
+      try {
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${GROQ_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'openai/gpt-oss-120b',
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: webQuery }
+            ],
+            temperature: 0.3,
+            max_tokens: 2048,
+          })
+        });
+        if (response.ok) {
+          const data = await response.json();
+          const text = data.choices?.[0]?.message?.content || '';
+          setAiResponseText(text);
+          setWebResults([
+            {
+              id: `groq-link-1`,
+              title: `Search specs for "${webQuery}" on Google`,
+              description: `View search query results for technical specifications of ${webQuery}.`,
+              source: 'google.com',
+              url: `https://www.google.com/search?q=${encodeURIComponent(webQuery + ' specifications datasheet')}`,
+              category: 'Google Search',
+              is_trusted: true
+            }
+          ]);
+        }
+      } catch (err) {
+        console.error('Groq search error:', err);
+      } finally {
+        setIsSearching(false);
+      }
+      return;
+    }
+
+    if (provider === 'mistral') {
+      try {
+        const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${MISTRAL_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'open-mistral-nemo',
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: webQuery }
+            ],
+            temperature: 0.3,
+            max_tokens: 2048,
+          })
+        });
+        if (response.ok) {
+          const data = await response.json();
+          const text = data.choices?.[0]?.message?.content || '';
+          setAiResponseText(text);
+          setWebResults([
+            {
+              id: `mistral-link-1`,
+              title: `Search specs for "${webQuery}" on Google`,
+              description: `View search query results for technical specifications of ${webQuery}.`,
+              source: 'google.com',
+              url: `https://www.google.com/search?q=${encodeURIComponent(webQuery + ' specifications datasheet')}`,
+              category: 'Google Search',
+              is_trusted: true
+            }
+          ]);
+        }
+      } catch (err) {
+        console.error('Mistral search error:', err);
+      } finally {
+        setIsSearching(false);
+      }
+      return;
+    }
 
     try {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
@@ -245,7 +421,7 @@ const ProductSearchPage = () => {
             <h1 className="section-title flex items-center gap-3"><Package className="text-brand-blue" size={28} /> Product & Consumables Catalog</h1>
             <p className="text-sm text-slate-400 -mt-4">Search internal records or Google verified spec sheets</p>
           </div>
-          {tab === 'catalog' && (
+          {tab === 'catalog' ? (
             <div className="flex items-center gap-2 self-end">
               {compareIds.length > 1 && (
                 <button onClick={() => setShowCompare(true)} className="premium-button flex items-center gap-2"><Grid3X3 size={14} /> Compare ({compareIds.length})</button>
@@ -253,6 +429,24 @@ const ProductSearchPage = () => {
               <button onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')} className="p-2.5 bg-slate-100 rounded-xl text-slate-500 hover:bg-slate-200 transition-all">
                 {viewMode === 'grid' ? <List size={16} /> : <Grid3X3 size={16} />}
               </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-3 self-end">
+              <span className={cn(
+                "w-2.5 h-2.5 rounded-full",
+                provider === 'gemini' && GEMINI_API_KEY ? 'bg-emerald-500 animate-pulse' :
+                provider === 'groq' && GROQ_API_KEY ? 'bg-emerald-500 animate-pulse' :
+                provider === 'mistral' && MISTRAL_API_KEY ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'
+              )}></span>
+              <select
+                value={provider}
+                onChange={(e) => handleProviderChange(e.target.value as 'gemini' | 'groq' | 'mistral')}
+                className="px-4 py-2 bg-white border border-surface-border text-slate-700 rounded-xl text-xs font-bold shadow-sm focus:border-brand-blue outline-none transition-all cursor-pointer"
+              >
+                <option value="gemini">Gemini 2.5 Flash</option>
+                <option value="groq">Groq GPT OSS 120B</option>
+                <option value="mistral">Mistral NeMo</option>
+              </select>
             </div>
           )}
         </div>
