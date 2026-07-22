@@ -17,6 +17,7 @@ import { cn } from '../../utils/cn';
 import { AnimatedPage } from '../../components/ui/AnimatedPage';
 import { storage } from '../../services/storage';
 import { useCRMStore } from '../../stores/modules/crmStore';
+import { useEngagementStore } from '../../stores/modules/engagementStore';
 
 const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
 const MISTRAL_API_KEY = import.meta.env.VITE_MISTRAL_API_KEY;
@@ -224,7 +225,7 @@ Ensure the copy is professional, free of emojis, and calls the user to action (e
             'Authorization': `Bearer ${GROQ_API_KEY}`
           },
           body: JSON.stringify({
-            model: 'llama3-8b-8192',
+            model: 'qwen-3.6-27b',
             messages: [
               { role: 'system', content: systemPrompt },
               { role: 'user', content: userPrompt }
@@ -310,6 +311,16 @@ Ensure the copy is professional, free of emojis, and calls the user to action (e
       const percent = Math.round(((i + 1) / targetContacts.length) * 100);
       setExecutionProgress(percent);
       setExecutionLogs(prev => [...prev, `[${percent}%] Auto-sent to ${c.name} <${c.email}> via ${targetMission.channels.join(', ')}`]);
+
+      // Record Buying Signal engagement event
+      useEngagementStore.getState().addEvent({
+        channel: (targetMission.channels[0]?.toLowerCase() as any) || 'email',
+        action: i % 2 === 0 ? 'opened' : 'clicked',
+        contactId: c.id || 'seed-1',
+        subject: `AI Mission: ${targetMission.name}`,
+        metadata: { linkUrl: 'https://aa2000.ph/quote', messagePreview: copyBody }
+      });
+
       await new Promise(r => setTimeout(r, 150 + Math.random() * 100));
     }
 

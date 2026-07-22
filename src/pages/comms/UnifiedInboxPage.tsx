@@ -20,15 +20,19 @@ import {
   Image,
   Layout,
   Bot,
-  Eye
+  Eye,
+  Lock,
+  StickyNote
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
+import { useEngagementStore } from '../../stores/modules/engagementStore';
 import { AnimatedPage } from '../../components/ui/AnimatedPage';
 
 interface ChatMessage {
   sender: 'me' | 'them';
   text: string;
   time: string;
+  isInternalNote?: boolean;
 }
 
 interface Conversation {
@@ -102,23 +106,36 @@ const UnifiedInboxPage = () => {
     const newMessage: ChatMessage = {
       sender: 'me',
       text: msg,
-      time: new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: 'numeric', hour12: true }).format(new Date())
+      time: new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: 'numeric', hour12: true }).format(new Date()),
+      isInternalNote: isNoteMode,
     };
 
     setConversations(conversations.map(c => {
       if (c.id === activeChatId) {
+        if (!isNoteMode) {
+          // Record Buying Signal engagement event for real customer replies
+          useEngagementStore.getState().addEvent({
+            channel: (c.channel.toLowerCase() as any) || 'viber',
+            action: 'replied',
+            contactId: c.name,
+            subject: `Inbox Message: ${c.name}`,
+            metadata: { messagePreview: msg }
+          });
+        }
+
         return {
           ...c,
           messages: [...c.messages, newMessage],
-          lastMsg: msg,
+          lastMsg: isNoteMode ? `📌 Internal Note: ${msg}` : msg,
           time: 'Just now',
           unread: 0,
-          aiActive: false // Manual message turns off AI
+          aiActive: isNoteMode ? c.aiActive : false // Internal notes do not disable AI
         };
       }
       return c;
     }));
     setMsg('');
+    if (isNoteMode) setIsNoteMode(false);
   };
 
   const filteredConversations = useMemo(() => 
@@ -312,37 +329,57 @@ const UnifiedInboxPage = () => {
             {/* Message Area */}
             <div className="flex-1 overflow-y-auto p-8 space-y-6 custom-scrollbar bg-[#f8fafc]">
               {activeChat.messages.map((m, i) => (
-                <div key={i} className={cn(
-                  "flex gap-4 max-w-[75%] animate-in slide-in-from-bottom-2 duration-300",
-                  m.sender === 'me' ? "ml-auto flex-row-reverse" : ""
-                )}>
-                  {m.sender !== 'me' && (
-                    <div className="w-8 h-8 rounded-full bg-slate-200 shrink-0 flex items-center justify-center text-[10px] font-bold text-slate-500 mt-auto mb-1 uppercase italic">
-                      {activeChat.avatar}
+                m.isInternalNote ? (
+                  <div key={i} className="my-2 p-4 bg-amber-50 border border-amber-200/80 rounded-2xl shadow-sm space-y-1.5 animate-in slide-in-from-bottom-2 duration-300">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-amber-800 flex items-center gap-1.5 bg-amber-100/90 px-2 py-0.5 rounded-md">
+                        <Lock size={12} /> Internal Note · Visible to Team Only
+                      </span>
+                      <span className="text-[9px] font-bold text-amber-700">{m.time}</span>
                     </div>
-                  )}
-                  <div className="space-y-1">
-                    <div className={cn(
-                      "p-4 rounded-2xl text-sm font-medium leading-relaxed shadow-sm",
-                      m.sender === 'me' 
-                        ? "bg-brand-blue text-white rounded-br-none" 
-                        : "bg-white border border-slate-100 rounded-bl-none text-navy-900"
-                    )}>
-                      {m.text}
-                    </div>
-                    <span className={cn(
-                      "text-[9px] font-bold uppercase tracking-widest px-2",
-                      m.sender === 'me' ? "text-right block text-slate-400" : "text-slate-400"
-                    )}>{m.time}</span>
+                    <p className="text-xs font-semibold text-amber-950 leading-relaxed">{m.text}</p>
                   </div>
-                </div>
+                ) : (
+                  <div key={i} className={cn(
+                    "flex gap-4 max-w-[75%] animate-in slide-in-from-bottom-2 duration-300",
+                    m.sender === 'me' ? "ml-auto flex-row-reverse" : ""
+                  )}>
+                    {m.sender !== 'me' && (
+                      <div className="w-8 h-8 rounded-full bg-slate-200 shrink-0 flex items-center justify-center text-[10px] font-bold text-slate-500 mt-auto mb-1 uppercase italic">
+                        {activeChat.avatar}
+                      </div>
+                    )}
+                    <div className="space-y-1">
+                      <div className={cn(
+                        "p-4 rounded-2xl text-sm font-medium leading-relaxed shadow-sm",
+                        m.sender === 'me' 
+                          ? "bg-brand-blue text-white rounded-br-none" 
+                          : "bg-white border border-slate-100 rounded-bl-none text-navy-900"
+                      )}>
+                        {m.text}
+                      </div>
+                      <span className={cn(
+                        "text-[9px] font-bold uppercase tracking-widest px-2",
+                        m.sender === 'me' ? "text-right block text-slate-400" : "text-slate-400"
+                      )}>{m.time}</span>
+                    </div>
+                  </div>
+                )
               ))}
             </div>
 
             {/* Input Footer */}
-            <div className="p-6 bg-white border-t border-slate-100">
+            <div className={cn(
+              "p-6 transition-all duration-300",
+              isNoteMode ? "bg-amber-50/60 border-t border-amber-200" : "bg-white border-t border-slate-100"
+            )}>
               <form onSubmit={handleSendMessage} className="relative group">
-                <div className="flex flex-col bg-slate-50/50 border border-slate-200 rounded-2xl transition-all focus-within:bg-white focus-within:border-brand-blue focus-within:shadow-lg focus-within:shadow-brand-blue/5">
+                <div className={cn(
+                  "flex flex-col border rounded-2xl transition-all",
+                  isNoteMode 
+                    ? "bg-amber-50/90 border-amber-300 focus-within:border-amber-500 focus-within:ring-2 focus-within:ring-amber-200"
+                    : "bg-slate-50/50 border-slate-200 focus-within:bg-white focus-within:border-brand-blue focus-within:shadow-lg focus-within:shadow-brand-blue/5"
+                )}>
                   <textarea 
                     rows={2}
                     value={msg}
@@ -353,7 +390,7 @@ const UnifiedInboxPage = () => {
                         handleSendMessage();
                       }
                     }}
-                    placeholder={`Reply to ${activeChat.name.split(' ')[0]} via ${activeChat.channel}...`}
+                    placeholder={isNoteMode ? `Add internal team note for ${activeChat.name.split(' ')[0]} (only visible to team)...` : `Reply to ${activeChat.name.split(' ')[0]} via ${activeChat.channel}...`}
                     className="w-full bg-transparent border-none outline-none px-5 py-4 text-sm font-medium resize-none text-navy-900 placeholder:text-slate-400"
                   />
                   <div className="flex items-center justify-between px-4 pb-3">
@@ -372,22 +409,30 @@ const UnifiedInboxPage = () => {
                        <button 
                         type="button" 
                         onClick={() => setIsNoteMode(!isNoteMode)}
-                        className={cn("text-[10px] font-bold uppercase tracking-widest transition-all", isNoteMode ? "text-brand-blue" : "text-slate-400 hover:text-navy-900")}
+                        className={cn(
+                          "px-3.5 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 border shadow-sm",
+                          isNoteMode 
+                            ? "bg-amber-100 text-amber-900 border-amber-300" 
+                            : "bg-white text-slate-500 border-slate-200 hover:text-navy-900 hover:bg-slate-50"
+                        )}
                        >
-                         Internal Note
+                         <Lock size={12} className={isNoteMode ? "text-amber-800" : "text-slate-400"} />
+                         <span>Internal Note</span>
                        </button>
                        <button 
                         type="submit"
                         className={cn(
-                          "flex items-center gap-2 pl-6 pr-4 py-2.5 rounded-xl font-bold uppercase tracking-widest text-[10px] transition-all",
-                          msg.trim() 
-                            ? "bg-brand-blue text-white shadow-xl shadow-brand-blue/20 scale-105" 
-                            : "bg-slate-100 text-slate-400 cursor-not-allowed"
+                          "flex items-center gap-2 pl-6 pr-4 py-2.5 rounded-xl font-bold uppercase tracking-widest text-[10px] transition-all shadow-md",
+                          !msg.trim() 
+                            ? "bg-slate-100 text-slate-400 cursor-not-allowed" 
+                            : isNoteMode
+                            ? "bg-amber-600 text-white shadow-amber-600/20 hover:bg-amber-700 scale-105"
+                            : "bg-brand-blue text-white shadow-brand-blue/20 hover:bg-brand-light scale-105"
                         )}
                         disabled={!msg.trim()}
                       >
-                        <span>Send</span>
-                        <Send size={14} />
+                        <span>{isNoteMode ? 'Save Note' : 'Send'}</span>
+                        {isNoteMode ? <Lock size={14} /> : <Send size={14} />}
                       </button>
                     </div>
                   </div>

@@ -17,10 +17,14 @@ import {
   Copy,
   Tag,
   CheckCircle2,
-  AlertTriangle
+  AlertTriangle,
+  Zap,
+  Flame
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { useCRMStore } from '../../stores/modules/crmStore';
+import { useEngagementStore } from '../../stores/modules/engagementStore';
+import { computeContactScore } from '../../utils/leadScoring';
 import { AnimatedPage, AnimatedList } from '../../components/ui/AnimatedPage';
 
 const ContactsListPage = () => {
@@ -325,12 +329,17 @@ const ContactsListPage = () => {
                 <th className="px-6 py-4">Enterprise ID</th>
                 <th className="px-6 py-4">Score</th>
                 <th className="px-6 py-4">Status</th>
+                <th className="px-6 py-4">Buying Signal</th>
                 <th className="px-6 py-4"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-surface-border">
               {filteredContacts.length > 0 ? (
-                filteredContacts.map(contact => (
+                filteredContacts.map(contact => {
+                  const events = useEngagementStore.getState().getEventsForContact(contact.id);
+                  const signal = useEngagementStore.getState().getSignalForContact(contact.id, contact.name);
+                  const scoreBreakdown = computeContactScore(contact, events, signal);
+                  return (
                   <tr key={contact.id} className="hover:bg-slate-50/30 transition-colors group">
                     <td className="px-6 py-4">
                        <input 
@@ -363,7 +372,21 @@ const ContactsListPage = () => {
                         <span className="text-xs font-semibold">{getCompanyName(contact.companyId)}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-xs font-bold text-brand-blue">{contact.score} pts</td>
+                    <td className="px-6 py-4">
+                      <div 
+                        title={`Score Breakdown:\n• Base: ${scoreBreakdown.basePoints} pts\n• Engagement: ${scoreBreakdown.engagementPoints} pts\n• Signal Bonus: ${scoreBreakdown.signalBonus} pts\n\nFactors:\n${scoreBreakdown.factors.join('\n') || 'Initial baseline'}`}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border font-bold text-xs cursor-help transition-transform hover:scale-105"
+                        style={{
+                          backgroundColor: scoreBreakdown.totalScore >= 85 ? '#FEF2F2' : scoreBreakdown.totalScore >= 75 ? '#FFFBEB' : '#EFF6FF',
+                          borderColor: scoreBreakdown.totalScore >= 85 ? '#FECACA' : scoreBreakdown.totalScore >= 75 ? '#FDE68A' : '#BFDBFE',
+                          color: scoreBreakdown.totalScore >= 85 ? '#DC2626' : scoreBreakdown.totalScore >= 75 ? '#D97706' : '#1D4ED8',
+                        }}
+                      >
+                        {scoreBreakdown.totalScore >= 85 ? <Flame size={12} className="text-rose-600 animate-pulse" /> : <Zap size={12} />}
+                        <span>{scoreBreakdown.totalScore} pts</span>
+                        <span className="text-[9px] px-1 py-0.2 bg-white/80 rounded font-extrabold uppercase">{scoreBreakdown.grade}</span>
+                      </div>
+                    </td>
                     <td className="px-6 py-4">
                       <span className={cn(
                         "px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider",
@@ -373,6 +396,22 @@ const ContactsListPage = () => {
                       )}>
                         {contact.status}
                       </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      {signal ? (
+                        <span className={cn(
+                          "px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider inline-flex items-center gap-1",
+                          signal.signal === 'closing' ? "bg-rose-100 text-rose-700" :
+                          signal.signal === 'hot' ? "bg-orange-100 text-orange-700" :
+                          signal.signal === 'warm' ? "bg-amber-100 text-amber-700" :
+                          "bg-blue-100 text-blue-700"
+                        )}>
+                          {signal.signal === 'closing' || signal.signal === 'hot' ? <Flame size={10} /> : <Zap size={10} />}
+                          {signal.label}
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-slate-400 font-medium">—</span>
+                      )}
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
@@ -441,7 +480,8 @@ const ContactsListPage = () => {
                       </div>
                     </td>
                   </tr>
-                ))
+                  );
+                })
               ) : (
                 <tr>
                   <td colSpan={6} className="px-6 py-20 text-center">

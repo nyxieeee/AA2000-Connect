@@ -11,11 +11,15 @@ import {
   FileText,
   X,
   Clock,
-  MessageSquare
+  MessageSquare,
+  Zap,
+  Flame
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { useCRMStore } from '../../stores/modules/crmStore';
 import { usePipelinesStore } from '../../stores/modules/pipelinesStore';
+import { useEngagementStore } from '../../stores/modules/engagementStore';
+import { computeContactScore } from '../../utils/leadScoring';
 
 interface ActivityEntry {
   id: string;
@@ -30,7 +34,11 @@ const ContactDetailPage = () => {
   const navigate = useNavigate();
   const { contacts, updateContact } = useCRMStore();
   const { deals, pipelines } = usePipelinesStore();
+  const getSignalForContact = useEngagementStore((s) => s.getSignalForContact);
   const contact = contacts.find(c => c.id === id);
+  const buyingSignal = contact ? getSignalForContact(contact.id, contact.name) : null;
+  const contactEvents = contact ? useEngagementStore.getState().getEventsForContact(contact.id) : [];
+  const scoreBreakdown = contact ? computeContactScore(contact, contactEvents, buyingSignal) : null;
 
   const [activeTab, setActiveTab] = useState('Timeline');
   const [isLogActivityOpen, setIsLogActivityOpen] = useState(false);
@@ -137,6 +145,18 @@ const ContactDetailPage = () => {
                   contact.status === 'Lead' ? 'bg-blue-100 text-blue-700' :
                   'bg-slate-100 text-slate-600'
                 )}>{contact.status}</span>
+                {buyingSignal && (
+                  <span className={cn(
+                    "px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-tight flex items-center gap-1",
+                    buyingSignal.signal === 'closing' ? 'bg-rose-100 text-rose-700' :
+                    buyingSignal.signal === 'hot' ? 'bg-orange-100 text-orange-700' :
+                    buyingSignal.signal === 'warm' ? 'bg-amber-100 text-amber-700' :
+                    'bg-blue-100 text-blue-700'
+                  )}>
+                    {buyingSignal.signal === 'closing' || buyingSignal.signal === 'hot' ? <Flame size={12} /> : <Zap size={12} />}
+                    {buyingSignal.label}
+                  </span>
+                )}
                 <span className="text-xs text-slate-400 font-medium">Assigned to {contact.assigned}</span>
               </div>
             </div>
@@ -216,21 +236,56 @@ const ContactDetailPage = () => {
             </div>
           </div>
 
-          <div className="glass-card p-6 bg-brand-blue/5 border-brand-blue/20">
-            <h3 className="font-bold text-brand-blue mb-4 flex items-center gap-2">
-              <Activity size={18} />
-              <span>Engagement Score</span>
-            </h3>
-            <div className="flex items-end gap-2">
-              <span className="text-4xl font-black text-brand-blue">{contact.score}</span>
-              <span className="text-xs font-bold text-slate-400 pb-1 mb-1">/ 100 pts</span>
+          {scoreBreakdown && (
+            <div className="glass-card p-6 bg-slate-50/80 border-surface-border space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-navy-900 text-sm flex items-center gap-2">
+                  <Activity size={18} className="text-brand-blue" />
+                  <span>Lead Score Engine</span>
+                </h3>
+                <span className={cn(
+                  "px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider",
+                  scoreBreakdown.totalScore >= 85 ? "bg-rose-100 text-rose-700" :
+                  scoreBreakdown.totalScore >= 75 ? "bg-amber-100 text-amber-700" :
+                  "bg-blue-100 text-blue-700"
+                )}>
+                  Grade {scoreBreakdown.grade} · {scoreBreakdown.heatLabel}
+                </span>
+              </div>
+
+              <div className="flex items-end gap-2">
+                <span className="text-4xl font-black text-navy-900">{scoreBreakdown.totalScore}</span>
+                <span className="text-xs font-bold text-slate-400 pb-1 mb-1">/ 100 pts</span>
+              </div>
+
+              <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+                <div 
+                  className={cn("h-full transition-all duration-500", 
+                    scoreBreakdown.totalScore >= 85 ? "bg-gradient-to-r from-orange-500 to-rose-600" :
+                    scoreBreakdown.totalScore >= 75 ? "bg-gradient-to-r from-amber-400 to-amber-600" :
+                    "bg-gradient-to-r from-blue-400 to-brand-blue"
+                  )} 
+                  style={{ width: `${scoreBreakdown.totalScore}%` }} 
+                />
+              </div>
+
+              <div className="pt-2 border-t border-slate-200/60 space-y-1.5">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Active Scoring Factors:</p>
+                {scoreBreakdown.factors.length > 0 ? (
+                  <ul className="space-y-1">
+                    {scoreBreakdown.factors.map((f, i) => (
+                      <li key={i} className="text-[11px] font-medium text-slate-600 flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-brand-blue shrink-0" />
+                        <span>{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-[11px] text-slate-400 italic">Initial baseline points applied</p>
+                )}
+              </div>
             </div>
-            <p className="text-xs text-slate-500 mt-2">
-              {contact.score >= 75 ? 'High engagement — ready for conversion.' :
-               contact.score >= 40 ? 'Moderate engagement — consider a follow-up.' :
-               'Low engagement — needs nurturing and outreach.'}
-            </p>
-          </div>
+          )}
         </div>
 
         {/* Main Content Tabs */}

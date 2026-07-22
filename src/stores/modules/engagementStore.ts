@@ -121,6 +121,31 @@ export const useEngagementStore = create<EngagementStore>((set, get) => ({
     return get().events.filter(e => e.contactId === contactId || e.leadId === contactId);
   },
   getBuyingSignals: () => {
+    // Dynamic contact and lead name resolver
+    const storedContacts = storage.get<Array<{ id: string; name: string }>>('module_crm_contacts') || [];
+    const storedLeads = storage.get<Array<{ id: string; name: string }>>('module_leads') || [];
+    
+    const nameMap: Record<string, string> = {
+      'seed-1': 'Maria Santos',
+      'seed-2': 'Juan Reyes',
+      'seed-3': 'Pedro Lim',
+      'seed-4': 'Luzviminda Cruz',
+      'seed-5': 'Ana Gonzales',
+      'c-seed-001': 'Michael Tan',
+      'c-seed-002': 'Sofia Garcia',
+      'c-seed-003': 'Gabriel Ramos',
+      'c-seed-004': 'Patricia Mercado',
+      'c-seed-005': 'Eduardo Villanueva',
+      'lead-1': 'Maria Santos',
+      'lead-2': 'Juan Reyes',
+      'lead-3': 'Ana Gonzales',
+      'lead-4': 'Pedro Lim',
+      'lead-5': 'Luzviminda Cruz',
+    };
+
+    storedContacts.forEach(c => { if (c.id && c.name) nameMap[c.id] = c.name; });
+    storedLeads.forEach(l => { if (l.id && l.name) nameMap[l.id] = l.name; });
+
     const grouped = new Map<string, EngagementEvent[]>();
     get().events.forEach(e => {
       const key = e.contactId || e.leadId || '';
@@ -128,10 +153,10 @@ export const useEngagementStore = create<EngagementStore>((set, get) => ({
       if (!grouped.has(key)) grouped.set(key, []);
       grouped.get(key)!.push(e);
     });
-    return Array.from(grouped.entries()).map(([id, events]) => analyzeSignal(events, contactNames[id] || id)).filter((s): s is BuyingSignal => s !== null);
+    return Array.from(grouped.entries()).map(([id, events]) => analyzeSignal(events, nameMap[id] || id)).filter((s): s is BuyingSignal => s !== null);
   },
-  getSignalForContact: (contactId, name) => {
+  getSignalForContact: (contactId, fallbackName) => {
     const events = get().events.filter(e => e.contactId === contactId || e.leadId === contactId);
-    return analyzeSignal(events, name);
+    return analyzeSignal(events, fallbackName);
   },
 }));

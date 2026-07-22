@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, UserPlus, MessageSquare, Globe, Mail, Bot, Webhook, Trash2, ChevronRight } from 'lucide-react';
+import { Plus, Search, UserPlus, MessageSquare, Globe, Mail, Bot, Webhook, Trash2, ChevronRight, Zap, X } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { useLeadsStore } from '../../stores/modules/leadsStore';
 import type { Lead } from '../../stores/modules/leadsStore';
 import { AnimatedPage, AnimatedList, AnimatedListItem } from '../../components/ui/AnimatedPage';
+import { LeadFunnelAutomationModal } from './LeadFunnelAutomationModal';
 
 const sourceIcons: Record<string, typeof MessageSquare> = {
   facebook: MessageSquare,
@@ -31,6 +32,8 @@ export default function LeadsPage() {
   const [sourceFilter, setSourceFilter] = useState<string>('All');
   const [statusFilter, setStatusFilter] = useState<string>('All');
   const [showForm, setShowForm] = useState(false);
+  const [isAutomationModalOpen, setIsAutomationModalOpen] = useState(false);
+  const [automationNotification, setAutomationNotification] = useState<string | null>(null);
   const [newLead, setNewLead] = useState({ name: '', email: '', phone: '', company: '', source: 'manual' as Lead['source'] });
 
   useEffect(() => { fetchLeads(); }, [fetchLeads]);
@@ -66,10 +69,31 @@ export default function LeadsPage() {
             <h1 className="text-2xl font-bold text-navy-900 tracking-tight">Lead Capture</h1>
             <p className="text-xs text-slate-500 mt-0.5">Capture and qualify incoming leads</p>
           </div>
-          <button onClick={() => setShowForm(true)} className="premium-button flex items-center gap-2 text-[10px]">
-            <Plus size={14} /> New Lead
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsAutomationModalOpen(true)}
+              className="px-3.5 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-navy-900 transition-all shadow-sm flex items-center gap-1.5"
+            >
+              <Zap size={14} className="text-amber-400" />
+              <span>Auto-Funnel Rules</span>
+            </button>
+            <button onClick={() => setShowForm(true)} className="premium-button flex items-center gap-2 text-[10px]">
+              <Plus size={14} /> New Lead
+            </button>
+          </div>
         </div>
+
+        {automationNotification && (
+          <div className="px-4 py-3 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-between text-xs font-semibold text-emerald-800 animate-in slide-in-from-top-2">
+            <div className="flex items-center gap-2">
+              <Zap size={16} className="text-emerald-600 shrink-0" />
+              <span>{automationNotification}</span>
+            </div>
+            <button onClick={() => setAutomationNotification(null)} className="text-emerald-600 hover:text-emerald-900">
+              <X size={14} />
+            </button>
+          </div>
+        )}
 
         {/* Stats */}
         <div className="grid grid-cols-5 gap-4">
@@ -188,6 +212,12 @@ export default function LeadsPage() {
           </div>
         </AnimatedList>
       </div>
+
+      <LeadFunnelAutomationModal
+        isOpen={isAutomationModalOpen}
+        onClose={() => setIsAutomationModalOpen(false)}
+        onEventProcessed={(msg) => setAutomationNotification(msg)}
+      />
     </AnimatedPage>
   );
 }

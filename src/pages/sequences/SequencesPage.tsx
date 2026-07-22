@@ -1,20 +1,23 @@
 import { useState } from 'react';
-import { Plus, Trash2, Play, Pause, ChevronRight, Mail, Clock, Bell, CheckSquare, ToggleLeft, ToggleRight, Users, XCircle } from 'lucide-react';
+import { Plus, Trash2, Play, Pause, ChevronRight, Mail, Clock, Bell, CheckSquare, ToggleLeft, ToggleRight, Users, XCircle, Bot, Sparkles } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { useSequencesStore, type Sequence, type SequenceStep } from '../../stores/modules/sequencesStore';
+import { useAIAgentsStore } from '../../stores/modules/aiAgentsStore';
 import { AnimatedPage, AnimatedList, AnimatedListItem } from '../../components/ui/AnimatedPage';
 
 const triggerLabels: Record<string, string> = { lead_created: 'Lead Created', deal_stage: 'Deal Stage Change', manual: 'Manual', inactivity: 'Inactivity Period' };
-const stepIcons: Record<string, typeof Mail> = { email: Mail, wait: Clock, notification: Bell, task: CheckSquare };
+const stepIcons: Record<string, typeof Mail> = { email: Mail, wait: Clock, notification: Bell, task: CheckSquare, ai_agent: Bot };
 
 export default function SequencesPage() {
   const { sequences, enrollments, addSequence, updateSequence, deleteSequence, enroll, pauseEnrollment, advanceStep, deleteEnrollment } = useSequencesStore();
+  const { agents } = useAIAgentsStore();
   const [showForm, setShowForm] = useState(false);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(sequences[0]?.id || null);
   const [form, setForm] = useState({ name: '', description: '', trigger: 'manual' as Sequence['trigger'], triggerValue: '' });
-  const [stepForm, setStepForm] = useState({ type: 'email' as SequenceStep['type'], subject: '', content: '', delayDays: 1 });
+  const [stepForm, setStepForm] = useState({ type: 'email' as SequenceStep['type'], subject: '', content: '', delayDays: 1, aiAgentId: agents[0]?.id || '' });
 
-  const selected = sequences.find(s => s.id === selectedId);
+  const activeSelectedId = selectedId || (sequences.length > 0 ? sequences[0].id : null);
+  const selected = sequences.find(s => s.id === activeSelectedId);
 
   const handleAddSequence = () => {
     if (!form.name.trim()) return;
@@ -24,12 +27,18 @@ export default function SequencesPage() {
   };
 
   const handleAddStep = () => {
-    if (!selectedId) return;
-    const seq = sequences.find(s => s.id === selectedId);
+    if (!activeSelectedId) return;
+    const seq = sequences.find(s => s.id === activeSelectedId);
     if (!seq) return;
-    const step: SequenceStep = { ...stepForm, id: `step-${Date.now()}`, order: seq.steps.length };
-    updateSequence(selectedId, { steps: [...seq.steps, step] });
-    setStepForm({ type: 'email', subject: '', content: '', delayDays: 1 });
+    const assignedAgent = agents.find(a => a.id === stepForm.aiAgentId);
+    const step: SequenceStep = { 
+      ...stepForm, 
+      id: `step-${Date.now()}`, 
+      order: seq.steps.length,
+      aiAgentName: stepForm.type === 'ai_agent' ? (assignedAgent?.name || 'AI Agent') : undefined
+    };
+    updateSequence(activeSelectedId, { steps: [...seq.steps, step] });
+    setStepForm({ type: 'email', subject: '', content: '', delayDays: 1, aiAgentId: agents[0]?.id || '' });
   };
 
   const handleRemoveStep = (stepId: string) => {
@@ -113,28 +122,57 @@ export default function SequencesPage() {
               {/* Steps */}
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Steps</p>
-                  <div className="flex gap-2">
-                    <select value={stepForm.type} onChange={e => setStepForm(p => ({ ...p, type: e.target.value as SequenceStep['type'] }))} className="px-2 py-1 text-[10px] bg-slate-50 border border-surface-border rounded-lg outline-none">
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Steps ({selected.steps.length})</p>
+                  <div className="flex gap-2 items-center">
+                    <select value={stepForm.type} onChange={e => setStepForm(p => ({ ...p, type: e.target.value as SequenceStep['type'] }))} className="px-2 py-1 text-[10px] bg-slate-50 border border-surface-border rounded-lg outline-none font-bold">
                       <option value="email">Email</option>
+                      <option value="ai_agent">🤖 AI Agent Executed</option>
                       <option value="task">Task</option>
                       <option value="wait">Wait</option>
                       <option value="notification">Notification</option>
                     </select>
+
+                    {stepForm.type === 'ai_agent' && (
+                      <select value={stepForm.aiAgentId} onChange={e => setStepForm(p => ({ ...p, aiAgentId: e.target.value }))} className="px-2 py-1 text-[10px] bg-indigo-50 text-indigo-900 border border-indigo-200 rounded-lg outline-none font-bold">
+                        {agents.map(a => (
+                          <option key={a.id} value={a.id}>{a.name} ({a.category})</option>
+                        ))}
+                      </select>
+                    )}
+
                     <input value={stepForm.delayDays} onChange={e => setStepForm(p => ({ ...p, delayDays: parseInt(e.target.value) || 1 }))} type="number" min={0} className="w-16 px-2 py-1 text-[10px] bg-slate-50 border border-surface-border rounded-lg outline-none" placeholder="Days" />
-                    <button onClick={handleAddStep} className="px-2 py-1 text-[10px] font-bold text-white bg-brand-blue rounded-lg hover:bg-brand-light transition-all">+ Step</button>
+                    <button onClick={handleAddStep} className="px-3 py-1 text-[10px] font-bold text-white bg-brand-blue rounded-lg hover:bg-brand-light transition-all shadow-sm">+ Step</button>
                   </div>
                 </div>
                 <div className="space-y-2">
                   {selected.steps.map((step, i) => {
-                    const Icon = stepIcons[step.type];
+                    const Icon = stepIcons[step.type] || Mail;
                     return (
-                      <div key={step.id} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
-                        <div className="flex items-center justify-center w-6 h-6 rounded-full bg-brand-blue/5 text-[10px] font-bold text-brand-blue">{i + 1}</div>
-                        <Icon size={16} className="text-slate-500" />
-                        <div className="flex-1">
-                          <p className="text-sm font-medium text-navy-900 capitalize">{step.type}{step.subject ? `: ${step.subject}` : ''}</p>
-                          <p className="text-[10px] text-slate-400">Delay: {step.delayDays}d</p>
+                      <div key={step.id} className={cn(
+                        "flex items-center gap-3 p-3 rounded-xl transition-all border",
+                        step.type === 'ai_agent' ? "bg-indigo-50/50 border-indigo-100" : "bg-slate-50 border-surface-border"
+                      )}>
+                        <div className={cn(
+                          "flex items-center justify-center w-6 h-6 rounded-full text-[10px] font-bold shrink-0",
+                          step.type === 'ai_agent' ? "bg-indigo-600 text-white" : "bg-brand-blue/10 text-brand-blue"
+                        )}>
+                          {i + 1}
+                        </div>
+                        <Icon size={16} className={step.type === 'ai_agent' ? "text-indigo-600" : "text-slate-500"} />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="text-xs font-bold text-navy-900 capitalize truncate">
+                              {step.type === 'ai_agent' ? `🤖 AI Agent Step: ${step.aiAgentName || 'AI Agent'}` : `${step.type}${step.subject ? `: ${step.subject}` : ''}`}
+                            </p>
+                            {step.type === 'ai_agent' && (
+                              <span className="px-1.5 py-0.5 bg-indigo-100 text-indigo-800 text-[8px] font-black uppercase rounded flex items-center gap-1 shrink-0">
+                                <Sparkles size={8} /> Auto-Generates Outreach
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[10px] text-slate-400 mt-0.5">
+                            {step.type === 'ai_agent' ? (step.promptInstruction || 'Dynamic AI Response Generation') : `Delay: ${step.delayDays}d`}
+                          </p>
                         </div>
                         <button onClick={() => handleRemoveStep(step.id)} className="p-1 text-slate-400 hover:text-rose-500"><Trash2 size={12} /></button>
                       </div>

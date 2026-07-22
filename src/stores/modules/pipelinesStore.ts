@@ -22,6 +22,18 @@ interface PipelinesStore {
   deletePipeline: (id: string) => void;
   addStage: (pipelineId: string, stageName: string) => void;
   deleteStage: (pipelineId: string, stageId: string) => void;
+
+  // Automation & Webhook Actions
+  handleQuotationEvent: (payload: {
+    quotationId: string;
+    eventType: 'QUOTE_SENT' | 'QUOTE_VIEWED' | 'QUOTE_NEGOTIATING' | 'QUOTE_ACCEPTED' | 'QUOTE_DECLINED';
+    companyName?: string;
+    contactEmail?: string;
+    quotationScope?: 'supply_only' | 'supply_install' | 'all';
+    amount?: number;
+    assignedTo?: string;
+  }) => { success: boolean; message: string; dealId?: string };
+  autoEvaluateDeals: () => { movedCount: number; summary: string[] };
 }
 
 function getSeedPipelines(): Pipeline[] {
@@ -176,5 +188,125 @@ export const usePipelinesStore = create<PipelinesStore>((set, get) => ({
     });
     storage.set('crm_pipelines', pipelines);
     set({ pipelines });
+  },
+
+  handleQuotationEvent: (payload) => {
+    const deals = get().deals;
+    const pipelines = get().pipelines;
+    const defaultPipeline = pipelines[0];
+    if (!defaultPipeline) return { success: false, message: 'No active pipeline found' };
+
+    // Stage ID Mappings
+    const stageMap: Record<string, string> = {
+      'New Inquiry': defaultPipeline.stages.find(s => s.name.toLowerCase().includes('inquiry'))?.id || defaultPipeline.stages[0]?.id,
+      'Qualified': defaultPipeline.stages.find(s => s.name.toLowerCase().includes('qualified'))?.id || defaultPipeline.stages[1]?.id,
+      'Proposal Sent': defaultPipeline.stages.find(s => s.name.toLowerCase().includes('proposal'))?.id || defaultPipeline.stages[2]?.id,
+      'Negotiation': defaultPipeline.stages.find(s => s.name.toLowerCase().includes('negotiat'))?.id || defaultPipeline.stages[3]?.id,
+      'Closed Won': defaultPipeline.stages.find(s => s.name.toLowerCase().includes('won'))?.id || defaultPipeline.stages[4]?.id,
+      'Closed Lost': defaultPipeline.stages.find(s => s.name.toLowerCase().includes('lost'))?.id || defaultPipeline.stages[5]?.id,
+    };
+
+    // 1. Find existing matching deal by companyName or create new deal
+    let targetDeal = deals.find(d => 
+      (payload.companyName && d.companyName?.toLowerCase() === payload.companyName.toLowerCase()) ||
+      (d.title && d.title.toLowerCase().includes((payload.companyName || '').toLowerCase()))
+    );
+
+    let targetStageId = stageMap['Proposal Sent'];
+    let status: 'Open' | 'Won' | 'Lost' = 'Open';
+
+    if (payload.eventType === 'QUOTE_SENT') {
+      targetStageId = stageMap['Proposal Sent'];
+    } else if (payload.eventType === 'QUOTE_VIEWED' || payload.eventType === 'QUOTE_NEGOTIATING') {
+      targetStageId = stageMap['Negotiation'];
+    } else if (payload.eventType === 'QUOTE_ACCEPTED') {
+      targetStageId = stageMap['Closed Won'];
+      status = 'Won';
+    } else if (payload.eventType === 'QUOTE_DECLINED') {
+      targetStageId = stageMap['Closed Lost'];
+      status = 'Lost';
+    }
+
+    const assignedUser = payload.assignedTo || (payload.quotationScope === 'supply_only' ? 'Hardware Sales Rep' : 'Project Engineering Rep');
+
+    if (targetDeal) {
+      // Update existing deal
+      const updatedDeals = deals.map(d => d.id === targetDeal!.id ? {
+        ...d,
+        stageId: targetStageId,
+        status,
+        value: payload.amount || d.value,
+        assigned: assignedUser,
+        product: d.product || (payload.quotationScope === 'supply_only' ? 'Supply Only Hardware' : 'Supply & Installation Project'),
+      } : d);
+
+      storage.set('crm_deals', updatedDeals);
+      set({ deals: updatedDeals });
+
+      return {
+        success: true,
+        message: `Deal "${targetDeal.title}" auto-updated to ${payload.eventType} → Stage: ${Object.keys(stageMap).find(k => stageMap[k] === targetStageId)} (Assigned: ${assignedUser})`,
+        dealId: targetDeal.id
+      };
+    } else {
+      // Create new deal dynamically from Quoting App Payload
+      const newDealId = `d-${Math.random().toString(36).substr(2, 9)}`;
+      const newDeal: Deal = {
+        id: newDealId,
+        title: `${payload.companyName || 'Quotation Request'} — ${payload.quotationId}`,
+        value: payload.amount || 250000,
+        stageId: targetStageId,
+        pipelineId: defaultPipeline.id,
+        companyName: payload.companyName || 'External Client',
+        product: payload.quotationScope === 'supply_only' ? 'Supply Only Hardware' : 'Supply & Installation Project',
+        status,
+        assigned: assignedUser,
+        createdAt: new Date().toISOString(),
+      };
+
+      const updatedDeals = [...deals, newDeal];
+      storage.set('crm_deals', updatedDeals);
+      set({ deals: updatedDeals });
+
+      return {
+        success: true,
+        message: `New Deal created for "${newDeal.title}" via Webhook → Stage: ${Object.keys(stageMap).find(k => stageMap[k] === targetStageId)} (Assigned: ${assignedUser})`,
+        dealId: newDealId
+      };
+    }
+  },
+
+  autoEvaluateDeals: () => {
+    const deals = get().deals;
+    const pipelines = get().pipelines;
+    const defaultPipeline = pipelines[0];
+    if (!defaultPipeline) return { movedCount: 0, summary: [] };
+
+    const stageMap = {
+      inquiry: defaultPipeline.stages.find(s => s.name.toLowerCase().includes('inquiry'))?.id,
+      qualified: defaultPipeline.stages.find(s => s.name.toLowerCase().includes('qualified'))?.id,
+      proposal: defaultPipeline.stages.find(s => s.name.toLowerCase().includes('proposal'))?.id,
+      negotiation: defaultPipeline.stages.find(s => s.name.toLowerCase().includes('negotiat'))?.id,
+    };
+
+    let movedCount = 0;
+    const summary: string[] = [];
+
+    const updated = deals.map(deal => {
+      // Rule 1: Auto-move Inquiry to Qualified if in Inquiry stage
+      if (deal.stageId === stageMap.inquiry && stageMap.qualified) {
+        movedCount++;
+        summary.push(`Advanced "${deal.title}" from New Inquiry → Qualified (Lead Qualified criteria met)`);
+        return { ...deal, stageId: stageMap.qualified };
+      }
+      return deal;
+    });
+
+    if (movedCount > 0) {
+      storage.set('crm_deals', updated);
+      set({ deals: updated });
+    }
+
+    return { movedCount, summary };
   }
 }));

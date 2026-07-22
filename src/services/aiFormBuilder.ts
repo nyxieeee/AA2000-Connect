@@ -47,7 +47,7 @@ async function callAI(systemPrompt: string, userPrompt: string): Promise<string>
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_API_KEY}` },
         body: JSON.stringify({
-          model: 'llama3-8b-8192',
+          model: 'qwen-3.6-27b',
           messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }],
           temperature: 0.1,
         }),

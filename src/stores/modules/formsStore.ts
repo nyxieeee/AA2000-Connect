@@ -3,6 +3,8 @@ import { storage } from '../../services/storage';
 import { useLeadsStore } from './leadsStore';
 import { analyzeFormSubmission, type AISubmissionAnalysis } from '../../services/aiFormBuilder';
 
+import { useEngagementStore } from './engagementStore';
+
 export interface FormField {
   key: string;
   label: string;
@@ -152,6 +154,15 @@ export const useFormsStore = create<FormsStore>((set, get) => ({
       source: 'website',
       status: 'new',
       notes: notes.trim(),
+    });
+
+    // Record Buying Signal engagement event
+    useEngagementStore.getState().addEvent({
+      channel: 'website',
+      action: 'submitted',
+      contactId: email,
+      subject: `Web Form: ${formName}`,
+      metadata: { pageUrl: `/forms/${formId}` },
     });
 
     // Trigger AI analysis in background

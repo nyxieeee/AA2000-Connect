@@ -68,7 +68,7 @@ const DEFAULT_AGENTS: AIAgent[] = [
     description: 'Flag leads with a scoring value of 80+ for prioritized follow-ups.',
     category: 'Sales',
     schedule: 'daily',
-    model: 'groq/llama-3.1-8b',
+    model: 'groq/qwen-3.6-27b',
     status: 'active',
     logs: [
       'Scanned pipeline logs at 2026-07-08T00:01:00Z',

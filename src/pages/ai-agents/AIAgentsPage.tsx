@@ -207,9 +207,8 @@ const AIAgentsPage = () => {
                         className="bg-transparent text-brand-blue font-bold uppercase tracking-wider text-[10px] focus:outline-none cursor-pointer disabled:cursor-not-allowed disabled:text-slate-400"
                       >
                         <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
-                        <option value="groq/llama-3.1-8b">Llama 3.1 8B</option>
+                        <option value="groq/qwen-3.6-27b">Qwen 3.6 27b (Groq)</option>
                         <option value="openai/gpt-oss-120b">GPT OSS 120b</option>
-                        <option value="groq/qwen-3.6-27b">Qwen 3.6 27b</option>
                         <option value="mistral/open-mistral-nemo">Mistral Nemo</option>
                       </select>
                     </div>
@@ -321,9 +320,8 @@ const AIAgentsPage = () => {
                       onChange={e => setForm(f => ({ ...f, model: e.target.value }))}
                     >
                       <option value="gemini-2.5-flash">Gemini 2.5 Flash {form.category === 'Vision' ? '(Required for Vision)' : ''}</option>
-                      <option value="groq/llama-3.1-8b">Llama 3.1 8B (Groq)</option>
-                      <option value="openai/gpt-oss-120b">GPT OSS 120b (OpenAI)</option>
                       <option value="groq/qwen-3.6-27b">Qwen 3.6 27b (Groq)</option>
+                      <option value="openai/gpt-oss-120b">GPT OSS 120b (OpenAI)</option>
                       <option value="mistral/open-mistral-nemo">Open Mistral Nemo</option>
                     </select>
                   </div>

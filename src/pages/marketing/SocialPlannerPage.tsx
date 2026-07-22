@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { 
   Plus, 
   Calendar as CalendarIcon, 
+  Calendar,
   Sparkles,
   ChevronLeft,
   ChevronRight,
@@ -20,7 +21,10 @@ import {
   Eye,
   MousePointer2,
   Image as ImageIcon,
-  FileVideo
+  FileVideo,
+  Copy,
+  Bot,
+  RefreshCw
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { AnimatedPage } from '../../components/ui/AnimatedPage';
@@ -91,6 +95,7 @@ const SocialPlannerPage = () => {
   });
   const [selectedMedia, setSelectedMedia] = useState<{type: 'image' | 'video', name: string} | null>(null);
   const [aiTopic, setAiTopic] = useState('');
+  const [isAIPostModalOpen, setIsAIPostModalOpen] = useState(false);
 
   const handlePrevMonth = () => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
@@ -168,7 +173,7 @@ Do not use any Markdown formatting (no hashes, no asterisks, no headers). Output
             'Authorization': `Bearer ${GROQ_API_KEY}`
           },
           body: JSON.stringify({
-            model: 'llama3-8b-8192',
+            model: 'qwen-3.6-27b',
             messages: [
               { role: 'system', content: systemPrompt },
               { role: 'user', content: userPrompt }
@@ -241,6 +246,7 @@ Do not use any Markdown formatting (no hashes, no asterisks, no headers). Output
       if (items.length > 0) {
         setGeneratedPosts(items);
         setIsGenerating(false);
+        setIsAIPostModalOpen(true);
         return;
       }
     }
@@ -253,6 +259,7 @@ Do not use any Markdown formatting (no hashes, no asterisks, no headers). Output
       `A robust structured cabling system is the nervous system of your business communication. AA2000 provides certified copper and fiber optic installations that support high-speed data transmission, reducing latency and maximizing uptime for your enterprise applications. Contact our technical consultants to upgrade your communication infrastructure. #StructuredCabling #FiberOptic #EnterpriseNetwork #TechSolutions #AA2000`
     ]);
     setIsGenerating(false);
+    setIsAIPostModalOpen(true);
   };
 
   const platforms = [
@@ -436,17 +443,12 @@ Do not use any Markdown formatting (no hashes, no asterisks, no headers). Output
                 </button>
                 
                 {generatedPosts.length > 0 && (
-                  <div className="space-y-3 pt-2">
-                    {generatedPosts.map((p, idx) => (
-                      <div 
-                        key={idx} 
-                        onClick={() => { setNewPost({ ...newPost, title: p }); setIsAddModalOpen(true); }}
-                        className="p-3.5 bg-slate-50 border border-slate-100 rounded-xl hover:border-brand-blue/30 hover:bg-white hover:shadow-md transition-all cursor-pointer group"
-                      >
-                        <p className="text-[10px] text-navy-900 leading-relaxed">{p}</p>
-                      </div>
-                    ))}
-                  </div>
+                  <button 
+                    onClick={() => setIsAIPostModalOpen(true)}
+                    className="w-full py-3 bg-violet-50 text-violet-700 border border-violet-200 rounded-xl font-bold text-xs hover:bg-violet-100 transition-all flex items-center justify-center gap-2 shadow-sm"
+                  >
+                    <Sparkles size={14} /> View AI Generated Posts ({generatedPosts.length})
+                  </button>
                 )}
               </div>
             </div>
@@ -662,6 +664,98 @@ Do not use any Markdown formatting (no hashes, no asterisks, no headers). Output
                 </button>
               </div>
             </form>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* AI Generated Posts Pop-up Modal */}
+      {isAIPostModalOpen && createPortal(
+        <div className="fixed inset-0 bg-navy-900/50 backdrop-blur-md flex items-center justify-center z-[9999] p-4">
+          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl border border-surface-border overflow-hidden animate-in">
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-surface-border flex items-center justify-between bg-gradient-to-r from-violet-50 via-purple-50 to-indigo-50">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-violet-600 text-white rounded-2xl shadow-md shadow-violet-600/20">
+                  <Sparkles size={20} />
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold text-navy-900 uppercase tracking-wider leading-none flex items-center gap-2">
+                    Synthesized AI Posts
+                    <span className="px-2 py-0.5 bg-violet-100 text-violet-800 text-[9px] font-bold rounded-md uppercase">Qwen 3.6 Free AI</span>
+                  </h2>
+                  <p className="text-[10px] text-slate-500 mt-1 mb-0 font-medium">
+                    Topic: <strong className="text-violet-700">{aiTopic || 'AA2000 Solutions'}</strong> · Choose any post to schedule or copy
+                  </p>
+                </div>
+              </div>
+              <button 
+                type="button"
+                onClick={() => setIsAIPostModalOpen(false)}
+                className="p-2 hover:bg-white/80 rounded-xl transition-colors text-slate-400 hover:text-navy-900"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-4 max-h-[65vh] overflow-y-auto custom-scrollbar">
+              {generatedPosts.map((postText, idx) => (
+                <div key={idx} className="p-5 bg-slate-50/80 border border-surface-border rounded-2xl hover:border-violet-300 hover:bg-white hover:shadow-lg transition-all space-y-3 group">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-violet-600 flex items-center gap-1.5">
+                      <Bot size={14} /> Variation #{idx + 1}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(postText);
+                          alert('Post caption copied to clipboard!');
+                        }}
+                        className="px-3 py-1.5 bg-white border border-surface-border rounded-xl text-[10px] font-bold text-slate-600 hover:bg-slate-100 hover:text-navy-900 transition-all flex items-center gap-1.5 shadow-sm"
+                      >
+                        <Copy size={12} /> Copy Text
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setNewPost({ ...newPost, title: postText });
+                          setIsAIPostModalOpen(false);
+                          setIsAddModalOpen(true);
+                        }}
+                        className="px-3.5 py-1.5 bg-violet-600 text-white rounded-xl text-[10px] font-bold hover:bg-violet-700 transition-all flex items-center gap-1.5 shadow-sm shadow-violet-600/20"
+                      >
+                        <Calendar size={12} /> Use in Broadcast
+                      </button>
+                    </div>
+                  </div>
+                  <p className="text-xs text-navy-900 leading-relaxed font-normal whitespace-pre-wrap">{postText}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 bg-slate-50 border-t border-surface-border flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => {
+                  generateAIContent();
+                }}
+                disabled={isGenerating}
+                className="px-4 py-2.5 bg-white border border-surface-border text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-100 transition-all flex items-center gap-2 shadow-sm"
+              >
+                {isGenerating ? <Clock size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+                Regenerate AI Copy
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsAIPostModalOpen(false)}
+                className="px-5 py-2.5 bg-navy-900 text-white rounded-xl text-xs font-bold hover:bg-navy-800 transition-all shadow-sm"
+              >
+                Done
+              </button>
+            </div>
           </div>
         </div>,
         document.body

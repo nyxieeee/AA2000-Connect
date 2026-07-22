@@ -1,7 +1,10 @@
 import { useState } from 'react';
-import { Zap, Flame, Snowflake, Target, Mail, MessageCircle, Globe, Camera, Phone, Smartphone, Eye, MousePointer, Plus } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Zap, Flame, Snowflake, Target, Mail, MessageCircle, Globe, Camera, Phone, Smartphone, Eye, MousePointer, Plus, ArrowRight, MessageSquare } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { useEngagementStore } from '../../stores/modules/engagementStore';
+import { useCRMStore } from '../../stores/modules/crmStore';
+import { useLeadsStore } from '../../stores/modules/leadsStore';
 import type { Channel, Action } from '../../stores/modules/engagementStore';
 import { AnimatedPage, AnimatedList, AnimatedListItem } from '../../components/ui/AnimatedPage';
 
@@ -25,10 +28,24 @@ const channels: Channel[] = ['email', 'viber', 'whatsapp', 'facebook', 'instagra
 const actions: Action[] = ['opened', 'read', 'clicked', 'replied', 'viewed', 'submitted'];
 
 export default function EmailTrackingPage() {
+  const navigate = useNavigate();
   const { events, addEvent, getBuyingSignals } = useEngagementStore();
+  const { contacts } = useCRMStore();
+  const { leads } = useLeadsStore();
+
   const [tab, setTab] = useState<'signals' | 'feed'>('signals');
   const [showSimulate, setShowSimulate] = useState(false);
   const [sim, setSim] = useState({ contactId: 'seed-1', name: 'Maria Santos', channel: 'email' as Channel, action: 'opened' as Action, link: '' });
+
+  const allContactOptions = [
+    { id: 'seed-1', name: 'Maria Santos (Seed Lead)' },
+    { id: 'seed-2', name: 'Juan Reyes (Seed Lead)' },
+    { id: 'seed-3', name: 'Pedro Lim (Seed Lead)' },
+    { id: 'seed-4', name: 'Luzviminda Cruz (Seed Lead)' },
+    { id: 'seed-5', name: 'Ana Gonzales (Seed Lead)' },
+    ...contacts.map(c => ({ id: c.id, name: `${c.name} (Contact - ${c.email})` })),
+    ...leads.map(l => ({ id: l.id, name: `${l.name} (Lead - ${l.source})` })),
+  ];
 
   const signals = getBuyingSignals();
   const highPriority = signals.filter(s => s.signal === 'hot' || s.signal === 'closing');
@@ -51,12 +68,9 @@ export default function EmailTrackingPage() {
       <div className="space-y-6 pb-12">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-navy-900 tracking-tight">Client Activity</h1>
-          <p className="text-xs text-slate-500 mt-0.5">Track client engagement across email, Viber, WhatsApp, Facebook, Instagram, and website</p>
+          <h1 className="text-2xl font-bold text-navy-900 tracking-tight">Client Activity & Buying Signals</h1>
+          <p className="text-xs text-slate-500 mt-0.5">Real-time purchase intent monitoring across Email, Viber, WhatsApp, Facebook, Instagram, and Website</p>
         </div>
-        <button onClick={() => setShowSimulate(true)} className="px-4 py-2 bg-brand-blue text-white rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-brand-light transition-all shadow-sm">
-          <Plus size={16} /> Simulate Event
-        </button>
       </div>
 
       {/* Tabs */}
@@ -111,56 +125,14 @@ export default function EmailTrackingPage() {
       </div>
       </AnimatedList>
 
-      {/* Simulate Modal */}
-      {showSimulate && (
-        <div className="glass-card p-5 space-y-3">
-          <p className="text-sm font-bold text-navy-900">Simulate Multi-Channel Event</p>
-          <div className="grid grid-cols-3 gap-3">
-            <div>
-              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Contact</label>
-              <select value={sim.contactId} onChange={e => setSim({ ...sim, contactId: e.target.value })}
-                className="w-full px-3 py-2 bg-slate-50 border border-surface-border rounded-xl text-xs outline-none">
-                <option value="seed-1">Maria Santos</option>
-                <option value="seed-2">Juan Reyes</option>
-                <option value="seed-3">Pedro Lim</option>
-                <option value="seed-4">Luzviminda Cruz</option>
-                <option value="seed-5">Ana Gonzales</option>
-              </select>
-            </div>
-            <div>
-              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Channel</label>
-              <select value={sim.channel} onChange={e => setSim({ ...sim, channel: e.target.value as Channel })}
-                className="w-full px-3 py-2 bg-slate-50 border border-surface-border rounded-xl text-xs outline-none">
-                {channels.map(c => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Action</label>
-              <select value={sim.action} onChange={e => setSim({ ...sim, action: e.target.value as Action })}
-                className="w-full px-3 py-2 bg-slate-50 border border-surface-border rounded-xl text-xs outline-none">
-                {actions.map(a => <option key={a} value={a}>{a.charAt(0).toUpperCase() + a.slice(1)}</option>)}
-              </select>
-            </div>
-          </div>
-          {(sim.action === 'clicked' || sim.action === 'viewed') && (
-            <input value={sim.link} onChange={e => setSim({ ...sim, link: e.target.value })} placeholder={sim.action === 'clicked' ? 'Link URL (e.g. https://aa2000.ph/quote)' : 'Page URL (e.g. /pricing)'}
-              className="w-full px-3 py-2 bg-slate-50 border border-surface-border rounded-xl text-xs outline-none" />
-          )}
-          <div className="flex gap-2">
-            <button onClick={handleSimulate} className="px-4 py-2 text-xs font-bold text-white bg-brand-blue rounded-lg hover:bg-brand-light transition-all">Record Event</button>
-            <button onClick={() => setShowSimulate(false)} className="px-3 py-2 text-xs font-semibold text-slate-500 hover:text-navy-900">Cancel</button>
-          </div>
-        </div>
-      )}
-
       {/* == BUYING SIGNALS TAB == */}
       {tab === 'signals' && (
         <>
           {signals.length === 0 ? (
             <div className="glass-card text-center py-12">
               <Zap size={40} className="mx-auto text-slate-300 mb-3" strokeWidth={1} />
-              <p className="text-sm text-slate-500 font-medium">No buying signals yet</p>
-              <p className="text-xs text-slate-400 mt-1">Simulate engagement events across channels to generate signals</p>
+              <p className="text-sm text-slate-500 font-medium">No active buying signals detected</p>
+              <p className="text-xs text-slate-400 mt-1">Buying signals will appear automatically as clients engage across Email, Viber, WhatsApp, and Website.</p>
             </div>
           ) : (
             <AnimatedList>
@@ -175,7 +147,7 @@ export default function EmailTrackingPage() {
                 const ChIcon = chCfg.icon;
                 return (
                   <AnimatedListItem key={signal.contactOrLeadId + i}>
-                  <div className={cn('glass-card p-5 border-l-4 transition-all', signal.signal === 'closing' ? 'border-l-rose-500' : signal.signal === 'hot' ? 'border-l-orange-400' : signal.signal === 'warm' ? 'border-l-amber-300' : 'border-l-blue-300')}>
+                  <div className={cn('glass-card p-5 border-l-4 transition-all flex items-center justify-between', signal.signal === 'closing' ? 'border-l-rose-500' : signal.signal === 'hot' ? 'border-l-orange-400' : signal.signal === 'warm' ? 'border-l-amber-300' : 'border-l-blue-300')}>
                     <div className="flex items-start gap-4">
                       <div className={cn('p-2.5 rounded-xl', cfg.bg)}>
                         <Icon size={20} className={cfg.color} />
@@ -192,6 +164,16 @@ export default function EmailTrackingPage() {
                         </div>
                         <p className="text-sm font-semibold text-navy-900 mt-1">{signal.reason}</p>
                       </div>
+                    </div>
+                    
+                    {/* Quick Action Buttons */}
+                    <div className="flex items-center gap-2 ml-4">
+                      <button onClick={() => navigate('/pipeline')} className="px-3 py-1.5 bg-brand-blue text-white rounded-lg text-xs font-bold flex items-center gap-1 hover:bg-brand-light transition-all shadow-sm">
+                        Create Deal <ArrowRight size={12} />
+                      </button>
+                      <button onClick={() => navigate('/inbox')} className="px-3 py-1.5 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-lg text-xs font-bold flex items-center gap-1 transition-all">
+                        <MessageSquare size={12} /> Contact
+                      </button>
                     </div>
                   </div>
                   </AnimatedListItem>

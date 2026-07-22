@@ -14,12 +14,16 @@ import {
   Edit,
   Users,
   Mail,
-  Phone
+  Phone,
+  Zap,
+  Flame
 } from 'lucide-react';
 import { usePipelinesStore } from '../../stores/modules/pipelinesStore';
 import { useCRMStore } from '../../stores/modules/crmStore';
+import { useEngagementStore } from '../../stores/modules/engagementStore';
 import { useNavigate } from 'react-router-dom';
 import { AnimatedPage } from '../../components/ui/AnimatedPage';
+import { PipelineAutomationModal } from './PipelineAutomationModal';
 import {
   DndContext,
   DragOverlay,
@@ -69,6 +73,8 @@ const SortableDealCard = ({ deal, onDelete }: { deal: Deal, onDelete: (id: strin
     }).format(val);
   };
 
+  const signal = useEngagementStore.getState().getSignalForContact(deal.contactId || deal.id, deal.companyName || deal.title);
+
   return (
     <div 
       ref={setNodeRef}
@@ -76,12 +82,26 @@ const SortableDealCard = ({ deal, onDelete }: { deal: Deal, onDelete: (id: strin
       className="bg-white p-3.5 rounded-lg border border-surface-border shadow-sm hover:border-brand-blue/30 hover:shadow-md transition-all cursor-grab active:cursor-grabbing group relative"
     >
       <div className="flex justify-between items-start mb-2">
-        <h4 
-          onClick={(e) => { e.stopPropagation(); navigate(`/pipeline/${deal.id}`); }}
-          className="text-xs font-bold text-navy-900 group-hover:text-brand-blue transition-colors line-clamp-1 cursor-pointer"
-        >
-          {deal.title}
-        </h4>
+        <div>
+          <h4 
+            onClick={(e) => { e.stopPropagation(); navigate(`/pipeline/${deal.id}`); }}
+            className="text-xs font-bold text-navy-900 group-hover:text-brand-blue transition-colors line-clamp-1 cursor-pointer"
+          >
+            {deal.title}
+          </h4>
+          {signal && (
+            <span className={cn(
+              "px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider inline-flex items-center gap-0.5 mt-1",
+              signal.signal === 'closing' ? "bg-rose-100 text-rose-700" :
+              signal.signal === 'hot' ? "bg-orange-100 text-orange-700" :
+              signal.signal === 'warm' ? "bg-amber-100 text-amber-700" :
+              "bg-blue-100 text-blue-700"
+            )}>
+              {signal.signal === 'closing' || signal.signal === 'hot' ? <Flame size={8} /> : <Zap size={8} />}
+              {signal.label}
+            </span>
+          )}
+        </div>
         <div className="relative">
           <button 
             {...attributes} {...listeners}
@@ -145,6 +165,8 @@ const PipelineBoardPage = () => {
   const [isNewDealModalOpen, setIsNewDealModalOpen] = useState(false);
   const [isNewPipelineModalOpen, setIsNewPipelineModalOpen] = useState(false);
   const [isEditPipelineModalOpen, setIsEditPipelineModalOpen] = useState(false);
+  const [isAutomationModalOpen, setIsAutomationModalOpen] = useState(false);
+  const [automationNotification, setAutomationNotification] = useState<string | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [isAddingStage, setIsAddingStage] = useState(false);
   const [newStageName, setNewStageName] = useState('');
@@ -159,7 +181,7 @@ const PipelineBoardPage = () => {
     status: 'Open' as 'Open' | 'Won' | 'Lost' | 'Abandoned'
   });
   const [newDealStage, setNewDealStage] = useState('');
-  const [newDealOwner, setNewDealOwner] = useState('Rose Bombales');
+  const [newDealOwner, setNewDealOwner] = useState('Unassigned');
   const [newPipelineName, setNewPipelineName] = useState('');
   const [editingPipelineName, setEditingPipelineName] = useState('');
 
@@ -354,6 +376,13 @@ const PipelineBoardPage = () => {
               className="pl-10 pr-4 py-2 bg-white border border-surface-border rounded-lg text-sm outline-none focus:ring-1 focus:ring-brand-blue/30 focus:border-brand-blue transition-all shadow-sm w-64"
             />
           </div>
+          <button
+            onClick={() => setIsAutomationModalOpen(true)}
+            className="px-3.5 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-navy-900 transition-all shadow-sm flex items-center gap-1.5"
+          >
+            <Zap size={14} className="text-amber-400" />
+            <span>Auto-Pipeline Rules & Webhook API</span>
+          </button>
           <button 
             onClick={() => setIsNewDealModalOpen(true)}
             className="premium-button flex items-center gap-2 text-xs"
@@ -374,6 +403,18 @@ const PipelineBoardPage = () => {
           </button>
         </div>
       </div>
+
+      {automationNotification && (
+        <div className="px-4 py-3 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-between text-xs font-semibold text-emerald-800 animate-in slide-in-from-top-2">
+          <div className="flex items-center gap-2">
+            <Zap size={16} className="text-emerald-600 shrink-0" />
+            <span>{automationNotification}</span>
+          </div>
+          <button onClick={() => setAutomationNotification(null)} className="text-emerald-600 hover:text-emerald-900">
+            <X size={14} />
+          </button>
+        </div>
+      )}
 
       {/* Board */}
       <DndContext
@@ -728,6 +769,13 @@ const PipelineBoardPage = () => {
           </div>
         </div>
       )}
+
+      {/* Pipeline Automation & Webhook API Modal */}
+      <PipelineAutomationModal
+        isOpen={isAutomationModalOpen}
+        onClose={() => setIsAutomationModalOpen(false)}
+        onEventProcessed={(msg) => setAutomationNotification(msg)}
+      />
     </AnimatedPage>
   );
 };

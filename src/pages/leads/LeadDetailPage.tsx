@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Mail, Phone, Building2, Globe, Trash2, Save, CheckCircle2, XCircle, Calendar } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, Building2, Globe, Trash2, Save, CheckCircle2, XCircle, Calendar, Sparkles, Bot, Zap, Target } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { useLeadsStore } from '../../stores/modules/leadsStore';
 import type { Lead } from '../../stores/modules/leadsStore';
@@ -14,10 +14,11 @@ const sourceLabels: Record<string, string> = {
 export default function LeadDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { leads, updateLead, deleteLead } = useLeadsStore();
+  const { leads, updateLead, deleteLead, enrichLeadWithAI } = useLeadsStore();
   const lead = leads.find(l => l.id === id);
 
   const [edit, setEdit] = useState(false);
+  const [isResearching, setIsResearching] = useState(false);
   const [form, setForm] = useState<Partial<Lead>>({});
 
   if (!lead) {
@@ -38,6 +39,12 @@ export default function LeadDetailPage() {
 
   const handleStatusChange = (status: Lead['status']) => {
     updateLead(lead.id, { status });
+  };
+
+  const handleRunAIResearch = async () => {
+    setIsResearching(true);
+    await enrichLeadWithAI(lead.id);
+    setIsResearching(false);
   };
 
   const statusColors: Record<string, string> = {
@@ -68,6 +75,14 @@ export default function LeadDetailPage() {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <button
+                onClick={handleRunAIResearch}
+                disabled={isResearching}
+                className="px-3.5 py-1.5 text-xs font-bold text-white bg-slate-900 rounded-lg hover:bg-navy-900 transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-50"
+              >
+                <Sparkles size={14} className="text-amber-400" />
+                <span>{isResearching ? 'Researching...' : 'AI Research & Enrich'}</span>
+              </button>
               <button onClick={() => { setEdit(!edit); if (!edit) setForm({ name: lead.name, email: lead.email, phone: lead.phone, company: lead.company, notes: lead.notes }); }} 
                 className="px-3 py-1.5 text-xs font-bold text-brand-blue bg-blue-50 rounded-lg hover:bg-blue-100 transition-all">{edit ? 'Cancel' : 'Edit'}</button>
               <button onClick={() => { if (confirm('Delete this lead?')) { deleteLead(lead.id); navigate('/leads'); } }} 
@@ -161,6 +176,79 @@ export default function LeadDetailPage() {
           <div className="glass-card p-6">
             <p className="sub-title">Notes</p>
             <p className="text-sm text-slate-600 whitespace-pre-wrap">{lead.notes}</p>
+          </div>
+        )}
+
+        {/* AI Research & Market Intelligence Card */}
+        {lead.aiResearch ? (
+          <div className="glass-card p-6 space-y-4 border-2 border-indigo-100 bg-gradient-to-br from-indigo-50/40 via-white to-blue-50/30">
+            <div className="flex items-center justify-between border-b border-indigo-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-brand-blue text-white rounded-xl shadow-sm">
+                  <Bot size={18} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-navy-900 uppercase tracking-wider">AI Market Intelligence Briefing</h3>
+                  <p className="text-[10px] text-slate-400 font-medium">Researched via Qwen 3.6 • {new Date(lead.aiResearch.researchedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full">
+                <Target size={12} />
+                <span className="text-xs font-black uppercase tracking-wider">Score: {lead.aiResearch.qualificationScore}/100</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-3 bg-white border border-indigo-100 rounded-xl space-y-1">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Industry Sector</p>
+                <p className="text-xs font-bold text-navy-900">{lead.aiResearch.companyIndustry}</p>
+              </div>
+              <div className="p-3 bg-white border border-indigo-100 rounded-xl space-y-1">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Estimated Size</p>
+                <p className="text-xs font-bold text-navy-900">{lead.aiResearch.estimatedCompanySize}</p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Detected Technical & Safety Needs</p>
+              <div className="flex flex-wrap gap-1.5">
+                {lead.aiResearch.technicalNeeds.map((need, i) => (
+                  <span key={i} className="px-2.5 py-1 bg-blue-100/70 text-blue-900 text-[10px] font-bold rounded-lg border border-blue-200">
+                    • {need}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2 pt-2 border-t border-indigo-100">
+              <p className="text-[10px] font-bold text-indigo-900 uppercase tracking-wider flex items-center gap-1">
+                <Sparkles size={12} className="text-amber-500" /> Recommended Opening Lines for Sales Rep
+              </p>
+              <ul className="space-y-1.5 text-xs font-medium text-slate-700">
+                {lead.aiResearch.suggestedTalkingPoints.map((tp, i) => (
+                  <li key={i} className="flex items-start gap-2 bg-white/80 p-2.5 rounded-xl border border-indigo-50">
+                    <span className="w-4 h-4 rounded-full bg-brand-blue/10 text-brand-blue flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">{i + 1}</span>
+                    <span className="leading-snug">{tp}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        ) : (
+          <div className="glass-card p-6 text-center space-y-3 bg-slate-50/50 border border-dashed border-slate-200">
+            <Bot size={32} className="mx-auto text-slate-300" />
+            <div>
+              <p className="text-xs font-bold text-navy-900">AI Market Intelligence Not Generated Yet</p>
+              <p className="text-[11px] text-slate-500 mt-0.5">Click "AI Research & Enrich" at the top to research company profile, calculate lead score, and generate personalized sales talking points.</p>
+            </div>
+            <button
+              onClick={handleRunAIResearch}
+              disabled={isResearching}
+              className="px-4 py-2 bg-navy-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-all inline-flex items-center gap-1.5 shadow-sm"
+            >
+              <Sparkles size={14} className="text-amber-400" />
+              <span>Run AI Research Now</span>
+            </button>
           </div>
         )}
       </div>

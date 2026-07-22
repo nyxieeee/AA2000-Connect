@@ -255,7 +255,7 @@ Constraints:
           'Authorization': `Bearer ${GROQ_API_KEY}`
         },
         body: JSON.stringify({
-          model: 'llama3-8b-8192',
+          model: 'qwen-3.6-27b',
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt }
