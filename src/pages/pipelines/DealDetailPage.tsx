@@ -236,15 +236,14 @@ const DealDetailPage = () => {
                         )}
 
                         {/* Vision AI Section */}
-                        {deal.extractedInfo?.items && (
+                        {Boolean(Array.isArray((deal.extractedInfo as any)?.items) && (deal.extractedInfo as any).items.length > 0) && (
                           <div className="pt-4 border-t border-brand-blue/10 space-y-3">
                              <div className="flex items-center gap-2 text-brand-blue">
                                 <Eye size={14} />
                                 <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Vision AI: Extracted Quote Items</p>
                              </div>
                              <div className="grid grid-cols-1 gap-2">
-                                 {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                                 {deal.extractedInfo.items.map((item: any, idx: number) => (
+                                 {((deal.extractedInfo as any).items as any[]).map((item: any, idx: number) => (
                                   <div key={idx} className="flex items-center justify-between p-2 bg-white rounded-lg border border-slate-100 shadow-sm">
                                      <span className="text-xs font-bold text-navy-900">{item.name}</span>
                                      <span className="px-2 py-0.5 bg-slate-100 text-slate-500 rounded text-[10px] font-black uppercase">Qty: {item.qty}</span>

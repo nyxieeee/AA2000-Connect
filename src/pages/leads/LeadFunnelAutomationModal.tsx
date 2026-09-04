@@ -3,12 +3,8 @@ import { createPortal } from 'react-dom';
 import { 
   Zap, 
   X, 
-  CheckCircle2, 
-  Sliders, 
-  ShieldCheck, 
   Bot, 
-  Sparkles,
-  ArrowRight
+  Sparkles
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { useLeadsStore } from '../../stores/modules/leadsStore';

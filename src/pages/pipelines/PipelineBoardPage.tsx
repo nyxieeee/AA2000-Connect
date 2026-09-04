@@ -23,6 +23,7 @@ import { useCRMStore } from '../../stores/modules/crmStore';
 import { useEngagementStore } from '../../stores/modules/engagementStore';
 import { useNavigate } from 'react-router-dom';
 import { AnimatedPage } from '../../components/ui/AnimatedPage';
+import { cn } from '../../utils/cn';
 import { PipelineAutomationModal } from './PipelineAutomationModal';
 import {
   DndContext,

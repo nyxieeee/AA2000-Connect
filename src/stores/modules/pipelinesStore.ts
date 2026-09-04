@@ -257,6 +257,7 @@ export const usePipelinesStore = create<PipelinesStore>((set, get) => ({
         value: payload.amount || 250000,
         stageId: targetStageId,
         pipelineId: defaultPipeline.id,
+        contactId: payload.contactEmail || 'c-external',
         companyName: payload.companyName || 'External Client',
         product: payload.quotationScope === 'supply_only' ? 'Supply Only Hardware' : 'Supply & Installation Project',
         status,

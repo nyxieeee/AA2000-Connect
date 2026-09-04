@@ -16,7 +16,7 @@ export default function ContractsPage() {
   const { contracts, addContract, updateContract, deleteContract } = useContractsStore();
   const [showForm, setShowForm] = useState(false);
   const [search, setSearch] = useState('');
-  const [form, setForm] = useState({ contractNumber: '', type: 'service' as const, status: 'draft' as const, startDate: '', endDate: '', value: 0, description: '', terms: '', renewalAlertDays: 30, dealId: '', contactId: '', companyId: '' });
+  const [form, setForm] = useState({ contractNumber: '', type: 'service' as 'service' | 'product' | 'lease', status: 'draft' as const, startDate: '', endDate: '', value: 0, description: '', terms: '', renewalAlertDays: 30, dealId: '', contactId: '', companyId: '' });
 
   const filtered = contracts.filter(c => !search || c.contractNumber.toLowerCase().includes(search.toLowerCase()) || (c.description || '').toLowerCase().includes(search.toLowerCase()));
 

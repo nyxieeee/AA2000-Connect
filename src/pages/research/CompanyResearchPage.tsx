@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, Building2, Globe, FileText, Lightbulb, AlertTriangle, RefreshCw, Trash2, Sparkles, Loader2, Bot, CheckCircle2 } from 'lucide-react';
+import { Search, Building2, Globe, FileText, Lightbulb, AlertTriangle, Trash2, Sparkles, Loader2, Bot } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { useCompanyResearchStore } from '../../stores/modules/companyResearchStore';
 import { useCRMStore } from '../../stores/modules/crmStore';

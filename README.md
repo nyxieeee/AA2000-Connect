@@ -1,200 +1,188 @@
 # AA2000 Connect CRM
 
-Enterprise CRM platform for AA2000 Security & Technology Solutions Inc. — sales pipeline, lead management, marketing automation, client engagement, incentives, KPI tracking, bidding, and operations.
+Enterprise Customer Relationship Management (CRM) & Business Operating System (BOS) for **AA2000 Security and Technology Solutions Inc.** — engineered for commercial security, CCTV surveillance, fire detection & alarm systems (FDAS), biometric access control, networking infrastructure, and public safety integration across the Philippines.
 
-## Quick Start
+---
 
+## 📖 Documentation Suite (`docs/`)
+
+All technical architecture blueprints, system diagrams, data dictionaries, user stories, and state machines are located in the [`docs/`](./docs) folder:
+
+| Document | Primary Focus | Included Diagrams & Key Topics | Direct Link |
+|---|---|---|---|
+| **Entity Relationship Diagram (ERD)** | Full Database Schema & Data Dictionary | Mermaid `erDiagram`, 44+ Supabase PostgreSQL tables, keys, cascades, constraints, and field definitions | [📄 `docs/ERD.md`](./docs/ERD.md) |
+| **User Stories & Acceptance Criteria** | Functional & Business Requirements | 10 Epics, 7 Personas (CEO, GM, Sales Rep, Finance, Ops, Admin, Client) with Gherkin acceptance criteria | [📄 `docs/USER_STORIES.md`](./docs/USER_STORIES.md) |
+| **Data Flow Diagrams (DFD)** | System & Transactional Information Flows | **Level 0** Context Diagram, **Level 1** Process Decomposition, **Level 2** Sequences (Forms, AI, Incentives, SLA) | [📄 `docs/DATAFLOW_DIAGRAMS.md`](./docs/DATAFLOW_DIAGRAMS.md) |
+| **System Architecture Blueprint** | Layered System & Technical Topology | Presentation layer, 33 Zustand domain stores, Multi-Cloud AI cascade, RBAC security matrix, deployment | [📄 `docs/SYSTEM_ARCHITECTURE.md`](./docs/SYSTEM_ARCHITECTURE.md) |
+| **State Transitions & Workflows** | Finite State Machine (FSM) Specifications | Deal pipeline stages, 4-Tier Incentive approval workflow, Service ticket SLA countdown, PhilGEPS bidding | [📄 `docs/STATE_TRANSITIONS.md`](./docs/STATE_TRANSITIONS.md) |
+| **Master Architecture Guide** | Comprehensive Developer Guide | Store template pattern, Supabase cutover blueprint, component hierarchy, routes table | [📐 `ARCHITECTURE.md`](./ARCHITECTURE.md) |
+| **Implemented Changes Summary** | Development & Feature Changelog | Phases 1–7 security hardening, AI models, layout upgrades, and bug fixes | [📝 `AA2000_Connect_Implemented_Changes.md`](./AA2000_Connect_Implemented_Changes.md) |
+
+### 🔍 Quick Links to Key Sections in `docs/`
+* 📊 **Database ERD Diagram**: [`docs/ERD.md#2-high-level-entity-relationship-diagram-mermaid`](./docs/ERD.md#2-high-level-entity-relationship-diagram-mermaid)
+* 📖 **Data Dictionary (All 44 Tables)**: [`docs/ERD.md#3-detailed-data-dictionary`](./docs/ERD.md#3-detailed-data-dictionary)
+* 4️⃣ **4-Tier Incentive Approval Flow**: [`docs/DATAFLOW_DIAGRAMS.md#42-sequence-2-4-tier-incentive-approval-workflow`](./docs/DATAFLOW_DIAGRAMS.md#42-sequence-2-4-tier-incentive-approval-workflow)
+* 🤖 **Multi-Provider AI Fallback Cascade**: [`docs/SYSTEM_ARCHITECTURE.md#4-multi-cloud-ai-architecture--fallback-cascade`](./docs/SYSTEM_ARCHITECTURE.md#4-multi-cloud-ai-architecture--fallback-cascade)
+* 🔐 **Role-Based Access Control (RBAC) Matrix**: [`docs/SYSTEM_ARCHITECTURE.md#5-security--access-control-rbac-matrix`](./docs/SYSTEM_ARCHITECTURE.md#5-security--access-control-rbac-matrix)
+* 💼 **Sales Pipeline State Transitions**: [`docs/STATE_TRANSITIONS.md#2-deal--pipeline-state-transition-diagram`](./docs/STATE_TRANSITIONS.md#2-deal--pipeline-state-transition-diagram)
+* 🇵🇭 **PhilGEPS Government Bidding State Machine**: [`docs/STATE_TRANSITIONS.md#6-philgeps-public-bidding-state-machine`](./docs/STATE_TRANSITIONS.md#6-philgeps-public-bidding-state-machine)
+
+---
+
+## ⚡ Quick Start
+
+### Prerequisites
+* **Node.js**: v18.0 or higher
+* **npm**: v9.0 or higher
+
+### Installation & Development
 ```bash
+# 1. Clone or navigate to the workspace
+cd "AA2000 Connect (CRM)"
+
+# 2. Install dependencies
 npm install
-npm run dev       # Vite dev server with HMR
-npm run build     # TypeScript check + production build
-npm run lint      # ESLint
+
+# 3. Launch Vite HMR development server
+npm run dev
+
+# 4. Run TypeScript check & production build
+npm run build
+
+# 5. Run ESLint code inspection
+npm run lint
 ```
 
-## Tech Stack
+The application will be available at `http://localhost:5173`.
 
-React 19 · TypeScript 6 · Vite 8 · Zustand 5 · Tailwind CSS 3 · React Router 7 · Framer Motion 12 · Recharts · @xyflow/react (React Flow) · @dnd-kit · TanStack Query · Axios · date-fns · lucide-react · Supabase (ready to connect)
+---
 
-## Project Structure
+## 👥 Demo Role Accounts
 
-```
-src/
-├── App.tsx              # Routes + providers (60+ routes)
-├── components/          # Layout shell (Sidebar, Navbar, AppShell, ProtectedRoute)
-├── pages/               # 60+ page components in 47 directories
-├── stores/              # Zustand stores (32 module stores + 2 global)
-├── services/            # API layer, localStorage, workflow templates, AI builder
-├── types/               # Full Supabase schema types (44 tables)
-├── lib/supabase.ts      # Supabase client (currently placeholder)
-└── index.css            # Tailwind + custom component classes
-```
+The application features instant role-switching on the `/login` page to test all permission tiers and workflows:
 
-## Key Scripts
+| Role Persona | Demo Email | Access Permissions & Special Workflows |
+|---|---|---|
+| **Super Admin** | `super@aa2000.ph` | Full administrative root access, IT credentials, audit logs, system branding |
+| **CEO / Executive** | `ceo@aa2000.ph` | Strategic KPI scorecards, business intelligence, final 4th-tier incentive signoff |
+| **General Manager** | `gm@aa2000.ph` | Pipeline velocity, 7-point GM incentive approval checklist, PhilGEPS tenders |
+| **Sales Manager** | `manager@aa2000.ph` | Territory assignment rules, quotation margin review, sales team scorecards |
+| **Sales Representative**| `rep@aa2000.ph` | Contact CSV import/export, Kanban deal pipeline, AI next-steps, incentive filing |
+| **Finance Officer** | `finance@aa2000.ph`| Gross Profit validation, Official Receipt (OR) audits, commission clearance |
+| **Operations Lead** | `ops@aa2000.ph` | Service tickets, SLA breach monitoring, PMS/CMS recurring maintenance contracts |
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start dev server |
-| `npm run build` | Type-check + build for production |
-| `npm run lint` | Run ESLint |
-| `npm run preview` | Preview production build |
+---
 
-## Flowchart
+## 🛠️ Technology Stack
+
+| Layer | Technology | Version | Description |
+|---|---|---|---|
+| **Core Framework** | React | 19.0 | Concurrent React with functional components and modern hooks |
+| **Language** | TypeScript | 6.0 | Strict type safety across stores, services, and database schemas |
+| **Bundler & Tooling**| Vite | 8.0 | Instant Hot Module Replacement (HMR) and optimized Rolldown packaging |
+| **Routing** | React Router | 7.0 | Role-guarded application routing across 60+ pages |
+| **State Management** | Zustand | 5.0 | 33 domain-specific module stores with zero-latency synchronization |
+| **Visual Workflow** | @xyflow/react | 12.x | Visual drag-and-drop node graph canvas for automation flows |
+| **Drag & Drop** | @dnd-kit | 6.x | Accessible drag-and-drop Kanban pipeline boards |
+| **Animations** | Framer Motion | 12.x | High-end micro-interactions, modal overlays, page transitions |
+| **CSS & Design** | Tailwind CSS | 3.4 | Enterprise theme tokens, custom glassmorphism, responsive utilities |
+| **Data Visualization**| Recharts | 2.15 | Responsive SVG charts for revenue velocity, margins, and KPI tracking |
+| **Icons** | Lucide React | 1.16 | Comprehensive icon library |
+| **Cloud AI Cascade** | Groq / Mistral / Gemini| Cloud APIs | 3-tier fallback LLM engine (Qwen 2.5 32B $\rightarrow$ Mistral $\rightarrow$ Gemini 2.5 Flash) |
+| **Active Storage** | localStorage | Native Web | Zero-latency local persistence with `aa2000_*` namespace isolation |
+| **Backend (Ready)** | Supabase PostgreSQL | 15+ | 44 relational tables, Row-Level Security, foreign key cascades, JSONB schemas |
+
+---
+
+## 🌟 Core System Modules
+
+### 1. Inbound Ingestion & Algorithmic Lead Scoring
+* **Dynamic Web Forms**: Auto-generates CRM contact and lead records directly from public form submissions.
+* **Lead Scoring Engine (`leadScoring.ts`)**: Dynamically computes buying temperature (0–100 score, letter grades A+ to D) using engagement telemetry, company size, and high-intent link clicks.
+* **Territory Routing**: Rule-based automatic distribution of leads based on geography, service type, and deal scope.
+
+### 2. Commercial Pipeline & Opportunity Management
+* **Kanban Pipeline Board**: Drag-and-drop deals across sales stages (Inquiry $\rightarrow$ Qualified $\rightarrow$ Site Survey $\rightarrow$ Proposal Sent $\rightarrow$ Negotiation $\rightarrow$ Won/Lost).
+* **Quotation Webhook Service**: Integrates with external quoting tools to automatically advance pipeline stages upon quote dispatch, client views, or deposit receipt.
+* **Loss Reason Audit**: Mandatory audit capture for lost or abandoned opportunities to identify pricing and competitor friction.
+
+### 3. Multi-Tier Incentive & Commission Approval Lifecycle
+* **Automated GP Slabs**: Computes Gross Profit = Total Revenue minus Equipment/Subcontractor BOM cost, calculating commission based on corporate incentive slabs.
+* **GM 7-Point Compliance Review**: Requires General Manager verification across 7 mandatory items (signed contract, full collection, signed DR, warranty card, technical sign-off, official receipt, clearance form).
+* **Finance & CEO Governance**: Dual-custody financial clearance and executive signoff before commission release.
+
+### 4. Multi-Provider AI Fallback Engine
+* **Contextual Recommendations**: Generates next-best-action sales recommendations, prioritized follow-ups, and pre-composed Viber/Email drafts.
+* **Resilient Cascade**: Primary query to **Groq Cloud (Qwen 2.5 32B)** $\rightarrow$ secondary failover to **Mistral AI** $\rightarrow$ tertiary failover to **Google Gemini 2.5 Flash** $\rightarrow$ local heuristic regex compiler.
+* **Dynamic AI Agent Center**: Deployable AI agents with engine model switchers and automatic vision locks for OCR/List scanners.
+
+### 5. Service Desk, Warranty Ticketing & SLA Monitor
+* **Service Request Ticketing**: Sequential ticket IDs (e.g. `REQ-2026-0042`) with priority categories (`urgent`, `high`, `medium`, `low`).
+* **SLA Countdown & Escalation**: Visual countdown timers with automated breach detection and emergency managerial alerts.
+* **PMS & CMS Governance**: Recurring Preventive Maintenance schedules and Corrective Maintenance emergency dispatch.
+
+### 6. PhilGEPS Public Bidding & Commercial Tenders
+* **RA 9184 Compliance**: Tracking for Philippine Government Procurement Reform Act tenders.
+* **Statutory Checklists**: Class A legal eligibility documents, PCAB license verification, Single Largest Completed Contract (SLCC), NFCC, and Omnibus Sworn Statements.
+* **Margin Tracking**: Real-time comparison of Approved Budget for the Contract (ABC) against AA2000 submitted bid amounts.
+
+### 7. Product Catalog & Live Google Grounding
+* **Hardware Catalog**: Pre-seeded products across CCTV, FDAS, Biometrics, Networking, Structured Cabling, and Backup Power.
+* **Live Web Grounding**: Instant switching to Google Search Grounding to fetch external datasheets, manufacturer pinouts, and fire safety codes with cited reference URLs.
+
+---
+
+## 🗺️ High-Level System Architecture Diagram
 
 ```mermaid
 flowchart TB
-    subgraph Browser["Browser"]
-        REACT["React 19 App"]
+    subgraph UI_LAYER["Presentation Layer (React 19 + Tailwind CSS)"]
+        APP["AppShell Layout (Fixed w-64 Sidebar, Navbar)"]
+        PAGES["60+ Route Pages (Sales, Marketing, Operations, Intelligence, Admin)"]
+        BUILDER["React Flow Visual Workflow Builder (@xyflow/react)"]
+        KANBAN["dnd-kit Drag-and-Drop Pipeline Kanban"]
     end
 
-    subgraph Routing["Routing Layer"]
-        RR["React Router 7"]
-        LOGIN["/login - LoginPage"]
-        APP["/ - AppShell Layout"]
-        PAGES["60+ Route Pages"]
+    subgraph STATE_LAYER["State & Domain Layer (Zustand 5)"]
+        GLOBAL["Global Stores: authStore, sidebarStore"]
+        MODULES["33 Module Stores: crm, pipelines, leads, incentives, requests, sla, bidding, kpi..."]
     end
 
-    subgraph UI["UI Layer"]
-        SHELL["AppShell"]
-        SIDEBAR["Sidebar (10 nav groups, role-based)"]
-        NAVBAR["Navbar (search, notifs, avatar)"]
-        ANIM["Framer Motion Animations"]
-        TAILWIND["Tailwind CSS Design System"]
+    subgraph SERVICE_LAYER["Services & Logic Engines"]
+        SCORING["leadScoring.ts (Algorithmic Lead Scoring 0-100)"]
+        AI_REC["aiRecommendationEngine.ts (Multi-Provider Cascade)"]
+        AI_FLOW["aiWorkflowBuilder.ts (NLP -> Workflow Graph)"]
+        STORAGE["storage.ts (Local-First aa2000_ Namespace)"]
+        SUPABASE_SVC["supabaseService.ts (Typed Supabase API Layer)"]
     end
 
-    subgraph State["State Management"]
-        AUTH["authStore (mock auth, 6 roles)"]
-        SIDESTORE["sidebarStore (persisted)"]
-        MODULES["32 Module Stores"]
-        RQ["@tanstack/react-query (available)"]
+    subgraph CLOUD_SERVICES["External Gateways & AI Cloud"]
+        GROQ["Groq Cloud API"]
+        MISTRAL["Mistral AI API"]
+        GEMINI["Google Generative AI"]
+        COMMS["Viber / WhatsApp / SMTP Gateways"]
     end
 
-    subgraph Stores["Module Stores"]
-        CRM["crmStore"]
-        PIPE["pipelinesStore"]
-        TASKS["tasksStore"]
-        PROJ["projectsStore"]
-        CHAT["chatStore"]
-        AUTO["automationStore"]
-        LEADS["leadsStore"]
-        CONTR["contractsStore"]
-        SLA["slaStore"]
-        FORMS["formsStore"]
-        SEQ["sequencesStore"]
-        ORG["orgChartStore"]
-        ENG["engagementStore"]
-        DOCS["documentsStore"]
-        MEET["meetingsStore"]
-        NOTIF["notificationsStore"]
-        AUDIT["auditLogStore"]
-        AI_REC["aiRecommendationsStore"]
-        RESEARCH["companyResearchStore"]
-        EMAIL["emailTrackingStore"]
-        AI_AGENTS["aiAgentsStore"]
-        BID["biddingStore"]
-        INCENT["incentivesStore"]
-        KB["knowledgeBaseStore"]
-        KPI["kpiStore"]
-        MARKET["marketplaceStore"]
-        POLICY["policyCenterStore"]
-        CATALOG["productCatalogStore"]
-        REPORTS["reportsStore"]
-        SEO["seoGeoStore"]
-        SERVICE["serviceManagementStore"]
-        WEB["websiteIntegrationStore"]
+    subgraph DATABASE_LAYER["Enterprise Database (Supabase PostgreSQL)"]
+        POSTGRES[("PostgreSQL 15+ (44 Tables, RLS, Indexes)")]
     end
 
-    subgraph Data["Data Layer"]
-        STORAGE["storage.ts<br/>localStorage wrapper<br/>(aa2000_ prefix)"]
-        SUPABASE["supabaseService.ts<br/>Typed API layer<br/>(25+ API modules)"]
-        SUPA["supabase.ts<br/>Client (null — placeholder)"]
-    end
-
-    subgraph External["Future Backend"]
-        SUPABASE_DB[("Supabase PostgreSQL<br/>44 tables")]
-    end
-
-    REACT --> RR
-    RR --> LOGIN
-    RR --> APP
-    APP --> SHELL
-    SHELL --> SIDEBAR
-    SHELL --> NAVBAR
-    SHELL --> PAGES
-    PAGES --> ANIM
-    PAGES --> TAILWIND
-
-    PAGES --> AUTH
-    PAGES --> MODULES
-    PAGES --> RQ
-
-    MODULES --> CRM
-    MODULES --> PIPE
-    MODULES --> TASKS
-    MODULES --> PROJ
-    MODULES --> CHAT
-    MODULES --> AUTO
-    MODULES --> LEADS
-    MODULES --> CONTR
-    MODULES --> SLA
-    MODULES --> FORMS
-    MODULES --> SEQ
-    MODULES --> ORG
-    MODULES --> ENG
-    MODULES --> DOCS
-    MODULES --> MEET
-    MODULES --> NOTIF
-    MODULES --> AUDIT
-    MODULES --> AI_REC
-    MODULES --> RESEARCH
-    MODULES --> EMAIL
-    MODULES --> AI_AGENTS
-    MODULES --> BID
-    MODULES --> INCENT
-    MODULES --> KB
-    MODULES --> KPI
-    MODULES --> MARKET
-    MODULES --> POLICY
-    MODULES --> CATALOG
-    MODULES --> REPORTS
-    MODULES --> SEO
-    MODULES --> SERVICE
-    MODULES --> WEB
-
-    CRM --> STORAGE
-    PIPE --> STORAGE
-    TASKS --> STORAGE
-    CHAT --> STORAGE
-    AUTO --> STORAGE
-
-    STORAGE -.->|"Future: swap to"| SUPABASE
-    SUPABASE --> SUPA
-    SUPA -.-> SUPABASE_DB
+    UI_LAYER --> STATE_LAYER
+    STATE_LAYER --> SERVICE_LAYER
+    SERVICE_LAYER <--> CLOUD_SERVICES
+    SERVICE_LAYER -.->|"Future Cutover"| DATABASE_LAYER
 ```
 
-## Architecture
+---
 
-**See [`ARCHITECTURE.md`](./ARCHITECTURE.md)** for:
-- Complete data flow diagram
-- Store pattern reference
-- Route table with all 60+ pages
-- Supabase connection guide
-- Component hierarchy
-- Design system tokens
-- Known limitations
+## 🔒 Security & Philippine DPA Compliance
 
-## Current Status
+* **Role-Based Access Control (RBAC)**: Enforced via `ProtectedRoute.tsx` with view gating for `super_admin`, `admin`, `sales_manager`, `sales_rep`, `finance`, `team_leader`, and `ceo`.
+* **Philippine Data Privacy Act of 2012 (RA 10173)**: Native contact consent tracking, retention date enforcement, and Data Subject Request (DSR) ticketing.
+* **Immutable Audit Trails**: All authentication events, deal stage movements, and approvals are recorded in `auditLogStore` and the database `audit_logs` table.
 
-- Fully functional SPA with localStorage persistence
-- 60+ page components across 47 module directories
-- 32 Zustand module stores with seed data
-- 2 global stores (auth, sidebar)
-- Mock auth with 6 role-based accounts (super_admin, admin, sales_manager, sales_rep, finance, team_leader, ceo)
-- Role-based sidebar visibility (10 nav groups)
-- Supabase service layer fully typed (25+ API modules)
-- All 44 database tables have migration SQL in `supabase/migrations/001_full_schema.sql`
-- AI workflow builder (NLP prompt → workflow nodes via `aiWorkflowBuilder.ts`)
-- 8 pre-built workflow automation templates
-- CSV import/export for contacts
-- Buying signal analysis engine (engagement scoring)
-- Full incentive request workflow (draft → GM → Finance → CEO → approved/released)
-- KPI monitoring, bidding/PhilGEPS management, marketplace integration
+---
+
+## 📄 License & Intellectual Property
+
+Copyright © 2026 **AA2000 Security and Technology Solutions Inc.** All rights reserved. Proprietary and confidential enterprise software.

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Mail, Phone, Building2, Globe, Trash2, Save, CheckCircle2, XCircle, Calendar, Sparkles, Bot, Zap, Target } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, Building2, Globe, Trash2, Save, CheckCircle2, XCircle, Calendar, Sparkles, Bot, Target } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { useLeadsStore } from '../../stores/modules/leadsStore';
 import type { Lead } from '../../stores/modules/leadsStore';

@@ -1,11 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Zap, Flame, Snowflake, Target, Mail, MessageCircle, Globe, Camera, Phone, Smartphone, Eye, MousePointer, Plus, ArrowRight, MessageSquare } from 'lucide-react';
+import { Zap, Flame, Snowflake, Target, Mail, MessageCircle, Globe, Camera, Phone, Smartphone, Eye, MousePointer, ArrowRight, MessageSquare } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { useEngagementStore } from '../../stores/modules/engagementStore';
-import { useCRMStore } from '../../stores/modules/crmStore';
-import { useLeadsStore } from '../../stores/modules/leadsStore';
-import type { Channel, Action } from '../../stores/modules/engagementStore';
+import type { Channel } from '../../stores/modules/engagementStore';
 import { AnimatedPage, AnimatedList, AnimatedListItem } from '../../components/ui/AnimatedPage';
 
 const channelConfig: Record<Channel, { icon: typeof Mail; label: string; color: string; bg: string }> = {
@@ -24,42 +22,14 @@ const signalConfig: Record<string, { icon: typeof Zap; color: string; bg: string
   cold: { icon: Snowflake, color: 'text-blue-600', bg: 'bg-blue-50' },
 };
 
-const channels: Channel[] = ['email', 'viber', 'whatsapp', 'facebook', 'instagram', 'website'];
-const actions: Action[] = ['opened', 'read', 'clicked', 'replied', 'viewed', 'submitted'];
-
 export default function EmailTrackingPage() {
   const navigate = useNavigate();
-  const { events, addEvent, getBuyingSignals } = useEngagementStore();
-  const { contacts } = useCRMStore();
-  const { leads } = useLeadsStore();
+  const { events, getBuyingSignals } = useEngagementStore();
 
   const [tab, setTab] = useState<'signals' | 'feed'>('signals');
-  const [showSimulate, setShowSimulate] = useState(false);
-  const [sim, setSim] = useState({ contactId: 'seed-1', name: 'Maria Santos', channel: 'email' as Channel, action: 'opened' as Action, link: '' });
-
-  const allContactOptions = [
-    { id: 'seed-1', name: 'Maria Santos (Seed Lead)' },
-    { id: 'seed-2', name: 'Juan Reyes (Seed Lead)' },
-    { id: 'seed-3', name: 'Pedro Lim (Seed Lead)' },
-    { id: 'seed-4', name: 'Luzviminda Cruz (Seed Lead)' },
-    { id: 'seed-5', name: 'Ana Gonzales (Seed Lead)' },
-    ...contacts.map(c => ({ id: c.id, name: `${c.name} (Contact - ${c.email})` })),
-    ...leads.map(l => ({ id: l.id, name: `${l.name} (Lead - ${l.source})` })),
-  ];
 
   const signals = getBuyingSignals();
   const highPriority = signals.filter(s => s.signal === 'hot' || s.signal === 'closing');
-
-  const handleSimulate = () => {
-    addEvent({
-      channel: sim.channel,
-      action: sim.action,
-      contactId: sim.contactId,
-      metadata: sim.action === 'clicked' ? { linkUrl: sim.link || 'https://aa2000.ph/quote' } : sim.action === 'viewed' ? { pageUrl: sim.link || '/pricing' } : undefined,
-    });
-    setShowSimulate(false);
-    setSim({ contactId: 'seed-1', name: 'Maria Santos', channel: 'email', action: 'opened', link: '' });
-  };
 
   const recentEvents = [...events].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).slice(0, 30);
 

@@ -33,8 +33,8 @@ export default function AIRecommendationsPage() {
     setScanMessage('');
     try {
       const count = await runLiveAIScan({
-        deals: deals.map(d => ({ id: d.id, title: d.title, value: d.value, companyName: d.companyName, stageId: d.stageId, status: d.status })),
-        leads: leads.map(l => ({ id: l.id, name: l.name, email: l.email, company: l.company, status: l.status, notes: l.notes })),
+        deals: deals.map(d => ({ id: d.id, title: d.title, value: d.value, companyName: d.companyName || '', stageId: d.stageId, status: d.status })),
+        leads: leads.map(l => ({ id: l.id, name: l.name, email: l.email, company: l.company || '', status: l.status, notes: l.notes || '' })),
         signals: activeSignals.map(s => ({ id: s.contactOrLeadId, name: s.name, channel: s.channel, signal: s.signal, reason: s.reason }))
       });
       setScanMessage(`Successfully generated ${count} new Multi-Provider AI recommendation(s)!`);

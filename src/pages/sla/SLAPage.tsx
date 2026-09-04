@@ -8,7 +8,7 @@ export default function SLAPage() {
   const { policies, entries, addPolicy, updatePolicy, deletePolicy, addEntry, resolveEntry, deleteEntry } = useSLAStore();
   const [showForm, setShowForm] = useState(false);
   const [search, setSearch] = useState('');
-  const [form, setForm] = useState({ name: '', scope: 'lead' as const, responseMinutes: 30, escalationUserId: '', alertMessage: 'SLA breach: {{scope}} response time exceeded' });
+  const [form, setForm] = useState({ name: '', scope: 'lead' as 'lead' | 'ticket' | 'approval' | 'deal', responseMinutes: 30, escalationUserId: '', alertMessage: 'SLA breach: {{scope}} response time exceeded' });
 
   const filtered = policies.filter(p => !search || p.name.toLowerCase().includes(search.toLowerCase()));
 

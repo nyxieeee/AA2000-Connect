@@ -13,7 +13,7 @@ import { cn } from '../../utils/cn';
 import { 
   DEFAULT_WEBHOOK_CONFIG, 
   getSampleCurlSnippet, 
-  getSampleJsSnippet 
+  getSampleJsSnippet
 } from '../../services/quotationWebhookService';
 
 interface PipelineAutomationModalProps {
@@ -93,10 +93,10 @@ export function PipelineAutomationModal({ isOpen, onClose }: PipelineAutomationM
               <h3 className="text-xs font-bold text-navy-900 uppercase tracking-wider">Automatic Pipeline Stage Transition Rules</h3>
               
               {[
-                { key: 'autoQualifyHighScore', label: 'Auto-Qualify High Score Leads', desc: 'Automatically move deals from New Inquiry to Qualified when contact lead score reaches 75+ pts.' },
-                { key: 'autoMoveOnQuoteSent', label: 'Auto-Move to Proposal Sent on Quote Event', desc: 'When your external Quoting App dispatches a quote, auto-advance deal stage to Proposal Sent & assign user by Quote Scope (Rose / Grace).' },
-                { key: 'autoMoveOnHotSignal', label: 'Auto-Move to Negotiation on Hot Signal', desc: 'When a contact exhibits Closing Ready or Hot buying signals (or views quote 3+ times), auto-advance to Negotiation.' },
-                { key: 'autoWinOnQuoteAccepted', label: 'Auto-Move to Closed Won on Quote Accepted', desc: 'When client approves quote or pays deposit in your quoting app, auto-move deal to Closed Won.' },
+                { key: 'autoQualifyHighScore' as const, label: 'Auto-Qualify High Score Leads', desc: 'Automatically move deals from New Inquiry to Qualified when contact lead score reaches 75+ pts.' },
+                { key: 'autoMoveOnQuoteSent' as const, label: 'Auto-Move to Proposal Sent on Quote Event', desc: 'When your external Quoting App dispatches a quote, auto-advance deal stage to Proposal Sent & assign user by Quote Scope (Rose / Grace).' },
+                { key: 'autoMoveOnHotSignal' as const, label: 'Auto-Move to Negotiation on Hot Signal', desc: 'When a contact exhibits Closing Ready or Hot buying signals (or views quote 3+ times), auto-advance to Negotiation.' },
+                { key: 'autoWinOnQuoteAccepted' as const, label: 'Auto-Move to Closed Won on Quote Accepted', desc: 'When client approves quote or pays deposit in your quoting app, auto-move deal to Closed Won.' },
               ].map(rule => (
                 <div key={rule.key} className="p-4 bg-slate-50 border border-surface-border rounded-2xl flex items-center justify-between gap-4">
                   <div className="space-y-0.5">
@@ -105,13 +105,13 @@ export function PipelineAutomationModal({ isOpen, onClose }: PipelineAutomationM
                   </div>
                   <button
                     type="button"
-                    onClick={() => setConfig(c => ({ ...c, [rule.key]: !c[rule.key as keyof WebhookConfig] }))}
+                    onClick={() => setConfig(c => ({ ...c, [rule.key]: !c[rule.key] }))}
                     className={cn(
                       "relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0",
-                      config[rule.key as keyof WebhookConfig] ? "bg-brand-blue" : "bg-slate-300"
+                      config[rule.key] ? "bg-brand-blue" : "bg-slate-300"
                     )}
                   >
-                    <span className={cn("inline-block h-4 w-4 transform rounded-full bg-white transition-transform", config[rule.key as keyof WebhookConfig] ? "translate-x-6" : "translate-x-1")} />
+                    <span className={cn("inline-block h-4 w-4 transform rounded-full bg-white transition-transform", config[rule.key] ? "translate-x-6" : "translate-x-1")} />
                   </button>
                 </div>
               ))}

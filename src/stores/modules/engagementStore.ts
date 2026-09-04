@@ -102,14 +102,6 @@ const seedEvents: EngagementEvent[] = [
 const storedEvents = storage.get<EngagementEvent[]>('module_engagement_events');
 if (!storedEvents) { storage.set('module_engagement_events', seedEvents); }
 
-const contactNames: Record<string, string> = {
-  'seed-1': 'Maria Santos',
-  'seed-2': 'Juan Reyes',
-  'seed-3': 'Pedro Lim',
-  'seed-4': 'Luzviminda Cruz',
-  'seed-5': 'Ana Gonzales',
-};
-
 export const useEngagementStore = create<EngagementStore>((set, get) => ({
   events: storedEvents || seedEvents,
   addEvent: (data) => {

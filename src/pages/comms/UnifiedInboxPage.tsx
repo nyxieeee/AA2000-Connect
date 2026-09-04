@@ -21,8 +21,7 @@ import {
   Layout,
   Bot,
   Eye,
-  Lock,
-  StickyNote
+  Lock
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { useEngagementStore } from '../../stores/modules/engagementStore';
